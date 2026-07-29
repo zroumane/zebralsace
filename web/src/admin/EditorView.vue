@@ -228,6 +228,41 @@ function ajouterTrait() {
   c.renderAll()
 }
 
+// Génération de codes-barres — bwip-js, 100 % locale (aucun service externe).
+// Le code est généré en PNG net à la résolution active puis inséré comme une
+// image ordinaire : le chemin de rendu unique reste inchangé.
+const codeBarres = ref(false)
+const cbType = ref('ean13')
+const cbValeur = ref('')
+
+async function genererCodeBarres() {
+  try {
+    const { default: bwipjs } = await import('bwip-js')
+    const c = document.createElement('canvas')
+    const opts: Record<string, unknown> = {
+      bcid: cbType.value,
+      text: cbValeur.value.trim(),
+      scale: Math.max(2, Math.round(dpi.value / 100)),
+    }
+    if (cbType.value !== 'qrcode') {
+      opts.height = 12
+      opts.includetext = true
+      opts.textxalign = 'center'
+    }
+    bwipjs.toCanvas(c, opts as never)
+    const img = await FabricImage.fromURL(c.toDataURL('image/png'))
+    // posé à taille native — comme un code-barres importé, jamais agrandi
+    img.set({ left: mmToPx(5, dpi.value), top: mmToPx(5, dpi.value) })
+    canvas.value!.add(img)
+    canvas.value!.setActiveObject(img)
+    canvas.value!.renderAll()
+    codeBarres.value = false
+    cbValeur.value = ''
+  } catch (e) {
+    message.error(`Code-barres invalide : ${String((e as Error).message ?? e)}`)
+  }
+}
+
 const apercuJour = ref<string | null>(null)
 async function apercuValeursDuJour() {
   apercuJour.value = await rendreCourant(1)
@@ -287,6 +322,7 @@ async function enregistrer() {
         <n-button data-testid="ajouter-texte" @click="ajouterTexte">+ Texte</n-button>
         <n-button @click="ajouterCadre">+ Cadre</n-button>
         <n-button @click="ajouterTrait">+ Trait</n-button>
+        <n-button data-testid="ajouter-code-barres" @click="codeBarres = true">+ Code-barres</n-button>
         <n-button tertiary data-testid="apercu-jour" @click="apercuValeursDuJour">Aperçu valeurs du jour</n-button>
         <n-button tertiary data-testid="imprimer-test" @click="imprimerTest">Imprimer un test</n-button>
         <b>Images</b>
@@ -333,6 +369,30 @@ async function enregistrer() {
         </n-button>
       </div>
     </div>
+
+    <n-modal :show="codeBarres" @update:show="codeBarres = false">
+      <n-card title="Générer un code-barres" style="max-width: 420px" closable @close="codeBarres = false">
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <n-select
+            v-model:value="cbType"
+            :options="[
+              { label: 'EAN-13 (produit)', value: 'ean13' },
+              { label: 'Code 128 (alphanumérique)', value: 'code128' },
+              { label: 'QR Code', value: 'qrcode' },
+            ]"
+          />
+          <n-input
+            v-model:value="cbValeur"
+            data-testid="cb-valeur"
+            placeholder="Valeur (12 chiffres pour un EAN-13)"
+            @keyup.enter="genererCodeBarres"
+          />
+          <n-button type="primary" data-testid="cb-generer" @click="genererCodeBarres">
+            Générer et insérer
+          </n-button>
+        </div>
+      </n-card>
+    </n-modal>
 
     <n-modal :show="!!apercuJour" @update:show="apercuJour = null">
       <n-card title="Aperçu (valeurs du jour)" style="max-width: 900px" closable @close="apercuJour = null">

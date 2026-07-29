@@ -23,7 +23,9 @@ exactement ce qui sort de l'imprimante.
   gras au milieu d'un paragraphe), variables `{{date}}`, `{{dlc}}`,
   `{{date+N}}` et valeurs partagées, bibliothèque d'images optimisées en
   noir et blanc à l'import (logos redimensionnés, codes-barres jamais
-  agrandis), formes, aperçu aux valeurs du jour, impression de test.
+  agrandis), génération de codes-barres **EAN-13, Code 128 et QR** (100 %
+  locale, aucun service externe), formes, aperçu aux valeurs du jour,
+  impression de test.
 - **Administration** — historique des impressions filtrable par dates,
   rapports d'erreur avec motif, réglages imprimante (IP, 203/300 dpi,
   contraste, vitesse, décalages X/Y), duplication de modèles avec choix
