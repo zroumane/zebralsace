@@ -117,7 +117,9 @@ async function imprimer() {
         <button class="fermer" data-testid="fermer-impression" title="Fermer" @click="emit('close')">✕</button>
       </template>
       <div class="contenu">
-        <img class="apercu" :src="apercu" alt="aperçu de l'étiquette" data-testid="apercu" />
+        <div class="zone-apercu">
+          <img class="apercu" :src="apercu" alt="aperçu de l'étiquette" data-testid="apercu" />
+        </div>
         <div class="reglages">
           <div class="dates">
             <div class="date-choix" :class="{ inactif: !avecDate }">
@@ -180,7 +182,9 @@ async function imprimer() {
 .fermer:active { color: #c1121f; }
 .dims { font-size: 15px; font-weight: 400; color: #888; margin-left: 10px; }
 .contenu { display: flex; gap: 32px; flex: 1; min-height: 0; }
-.apercu { flex: 1; min-width: 0; align-self: flex-start; border: 1px solid #e5e5e5; max-height: calc(100vh - 140px); object-fit: contain; }
+.zone-apercu { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
+/* la bordure épouse exactement l'étiquette : l'image garde son ratio, pas de zone vide encadrée */
+.apercu { max-width: 100%; max-height: calc(100vh - 140px); border: 1px solid #e5e5e5; }
 /* tablette : cibles tactiles généreuses, tout en grand */
 .reglages { width: 520px; display: flex; flex-direction: column; gap: 28px; }
 /* les deux dates côte à côte, IMPRIMER calé en bas de la colonne */
