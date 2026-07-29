@@ -495,6 +495,7 @@ function ajouterRectangle() {
     width: mmToPx(30, dpi.value),
     height: mmToPx(10, dpi.value),
     fill: '#000000',
+    strokeWidth: 0, // rempli : aucune bordure
     rx: mmToPx(2, dpi.value),
     ry: mmToPx(2, dpi.value),
   })
@@ -531,7 +532,7 @@ function appliquerRempli(v: boolean) {
   const o: any = selection.value
   if (!o || o.rx === undefined) return
   const couleur = couleurForme.value || '#000000'
-  if (v) o.set({ fill: couleur, stroke: null })
+  if (v) o.set({ fill: couleur, stroke: null, strokeWidth: 0 })
   else o.set({ fill: 'transparent', stroke: couleur, strokeWidth: mmToPx(bordure.value * 0.2, dpi.value) })
   rempli.value = v
   o.dirty = true
