@@ -74,7 +74,8 @@ function creerCategorie() {
 
 async function creer() {
   const t = await api.post<Template>('/api/templates', { nom: 'Nouveau modèle' })
-  router.push(`/admin/templates/${t.id}`)
+  // ?neuf=1 : l'éditeur saura que cette ébauche n'a jamais été enregistrée
+  router.push(`/admin/templates/${t.id}?neuf=1`)
 }
 
 const duplication = ref<Template | null>(null)

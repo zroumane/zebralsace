@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
-import { onBeforeRouteLeave, useRoute } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { Canvas, FabricImage, Line, Rect, Textbox } from 'fabric'
 import { useMessage } from 'naive-ui'
 import { api, type Globale, type Logo, type Template } from '../api'
@@ -10,22 +10,32 @@ import BoutonRetour from '../BoutonRetour.vue'
 import LogoLibrary from './LogoLibrary.vue'
 
 const route = useRoute()
+const router = useRouter()
 const message = useMessage()
 
 // --- modifications non enregistrées ---
 const modifie = ref(false)
 const pret = ref(false) // vrai une fois le chargement initial terminé
+// ébauche créée par « + Nouveau modèle », jamais enregistrée par l'utilisateur
+const jamaisEnregistre = ref(route.query.neuf === '1')
 
 function avantFermeture(e: BeforeUnloadEvent) {
-  if (!modifie.value) return
+  if (!modifie.value && !jamaisEnregistre.value) return
   e.preventDefault()
   e.returnValue = '' // requis par Chrome pour afficher l'alerte native
 }
 window.addEventListener('beforeunload', avantFermeture)
 onBeforeUnmount(() => window.removeEventListener('beforeunload', avantFermeture))
 
-onBeforeRouteLeave(() => {
+onBeforeRouteLeave(async () => {
   // confirm natif : cohérent avec l'alerte du navigateur à la fermeture d'onglet
+  if (jamaisEnregistre.value) {
+    const ok = window.confirm(
+      "Ce nouveau modèle n'a jamais été enregistré — quitter le supprimera. Quitter quand même ?"
+    )
+    if (ok) await api.del(`/api/templates/${route.params.id}`) // l'ébauche disparaît
+    return ok
+  }
   if (!modifie.value) return true
   return window.confirm('Modifications non enregistrées — quitter sans enregistrer ?')
 })
@@ -311,6 +321,10 @@ async function enregistrer() {
       vignette_png: await rendreCourant(0.3),
     })
     modifie.value = false
+    if (jamaisEnregistre.value) {
+      jamaisEnregistre.value = false
+      void router.replace(route.path) // retire ?neuf=1 (un rechargement ne doit pas le réarmer)
+    }
     message.success('Modèle enregistré')
   } catch (e) {
     message.error((e as Error).message)
