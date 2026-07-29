@@ -8,6 +8,8 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   dpi: '300',
   laize_mm: '104',
   admin_mdp: '', // vide = pas d'authentification ; sinon "sel:empreinte" (scrypt)
+  licence_client: '', // titulaire de la licence, affiché dans Réglages
+  licence_ref: '', // référence du contrat
   contraste: '15',
   vitesse: '4',
   offset_x: '0',

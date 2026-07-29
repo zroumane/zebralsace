@@ -138,11 +138,26 @@ async function supprimerGlobale(g: Globale) {
     </section>
 
     <section>
+      <h2>Licence</h2>
+      <label>Licencié (client) <n-input v-model:value="reglages.licence_client" placeholder="Nom de la société" /></label>
+      <label>Référence contrat <n-input v-model:value="reglages.licence_ref" placeholder="ex. CT-2026-04" /></label>
+      <p class="note">
+        Affiché à titre de traçabilité — la licence d'utilisation est régie par
+        le contrat de prestation.
+      </p>
+    </section>
+
+    <section>
       <h2>Bibliothèque d'images</h2>
       <LogoLibrary mode="manage" />
     </section>
 
-    <p v-if="version" class="version">Zebralsace v{{ version }}</p>
+    <p v-if="version" class="version">
+      Zebralsace v{{ version }}<template v-if="reglages.licence_client">
+        — licence : {{ reglages.licence_client
+        }}<template v-if="reglages.licence_ref"> ({{ reglages.licence_ref }})</template>
+      </template>
+    </p>
   </div>
 </template>
 
