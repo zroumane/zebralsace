@@ -56,7 +56,7 @@ async function supprimer(g: Globale) {
         </tr>
         <tr class="ajout">
           <td>
-            <n-input v-model:value="nouvelleCle" placeholder="cle" data-testid="nouvelle-cle" @keyup.enter="ajouter" />
+            <n-input v-model:value="nouvelleCle" placeholder="cle" :maxlength="30" show-count data-testid="nouvelle-cle" @keyup.enter="ajouter" />
           </td>
           <td>
             <n-input v-model:value="nouvelleValeur" placeholder="valeur" data-testid="nouvelle-valeur" @keyup.enter="ajouter" />

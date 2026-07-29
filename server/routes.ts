@@ -201,6 +201,8 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     res.json(db.prepare('SELECT cle, valeur FROM globals ORDER BY cle').all())
   })
   api.put('/globals/:cle', (req, res) => {
+    if (req.params.cle.length > 30)
+      return res.status(400).json({ erreur: 'Clé trop longue (30 caractères maximum)' })
     db.prepare(
       'INSERT INTO globals (cle, valeur) VALUES (?, ?) ON CONFLICT(cle) DO UPDATE SET valeur = excluded.valeur'
     ).run(req.params.cle, String(req.body?.valeur ?? ''))
