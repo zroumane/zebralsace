@@ -140,7 +140,6 @@ async function surDrop(cible: Logo | null) {
         @keyup.enter="genererCodeBarres"
       />
       <n-button type="primary" data-testid="cb-generer" @click="genererCodeBarres">Générer</n-button>
-      <p class="note">Génération 100 % locale, aucun service externe.</p>
     </section>
 
     <section class="biblio">
