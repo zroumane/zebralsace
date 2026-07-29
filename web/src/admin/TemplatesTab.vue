@@ -90,18 +90,6 @@ async function validerDuplication() {
   await charger()
 }
 
-const renommage = ref<Template | null>(null)
-const nouveauNom = ref('')
-function ouvrirRenommage(t: Template) {
-  renommage.value = t
-  nouveauNom.value = t.nom
-}
-async function validerRenommage() {
-  await api.put(`/api/templates/${renommage.value!.id}`, { nom: nouveauNom.value })
-  renommage.value = null
-  await charger()
-}
-
 function supprimer(t: Template) {
   dialog.warning({
     title: 'Supprimer le modèle',
@@ -144,14 +132,15 @@ function supprimer(t: Template) {
           @dragover.prevent
           @drop.stop="surDrop(t, s.categorie)"
         >
-          <img v-if="t.vignette_png" :src="t.vignette_png" :alt="t.nom" />
-          <div v-else class="vide">Pas encore d'aperçu</div>
+          <div class="apercu">
+            <img v-if="t.vignette_png" :src="t.vignette_png" :alt="t.nom" />
+            <span v-else class="vide">Pas encore d'aperçu</span>
+          </div>
           <b>{{ t.nom }}</b>
-          <small>{{ t.largeur_mm }}×{{ t.hauteur_mm }} mm — DLC {{ t.dlc_jours }} j</small>
+          <small>{{ t.largeur_mm }} × {{ t.hauteur_mm }} mm</small>
           <div class="actions">
             <n-button size="small" @click="router.push(`/admin/templates/${t.id}`)">Modifier</n-button>
             <n-button size="small" quaternary @click="ouvrirDuplication(t)">Dupliquer</n-button>
-            <n-button size="small" quaternary @click="ouvrirRenommage(t)">Renommer</n-button>
             <n-button size="small" quaternary type="error" @click="supprimer(t)">Supprimer</n-button>
           </div>
         </div>
@@ -189,14 +178,6 @@ function supprimer(t: Template) {
       </n-card>
     </n-modal>
 
-    <n-modal :show="!!renommage" @update:show="renommage = null">
-      <n-card title="Renommer" style="max-width: 400px" closable @close="renommage = null">
-        <n-input v-model:value="nouveauNom" data-testid="champ-renommage" @keyup.enter="validerRenommage" />
-        <template #footer>
-          <n-button type="primary" data-testid="valider-renommage" @click="validerRenommage">Valider</n-button>
-        </template>
-      </n-card>
-    </n-modal>
   </div>
 </template>
 
@@ -205,11 +186,19 @@ function supprimer(t: Template) {
 .aide { font-size: 12px; color: #999; }
 .categorie { margin: 18px 0 0; font-size: 16px; color: #780000; border-bottom: 1px solid #eee; padding-bottom: 4px; }
 .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; padding: 12px 0 16px; min-height: 40px; }
-.carte { border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; cursor: grab; }
+.carte {
+  border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px;
+  display: flex; flex-direction: column; gap: 6px; cursor: grab;
+  height: 250px; /* toutes les cartes à la même taille */
+}
 .deposez { color: #bbb; font-size: 13px; margin: 0; align-self: center; }
 .note { font-size: 12px; color: #666; margin: 8px 0 0; }
-.carte img { width: 100%; border: 1px solid #eee; }
-.vide { aspect-ratio: 2; display: grid; place-items: center; color: #999; background: #f7f7f7; }
+.apercu {
+  flex: 1; min-height: 0; display: grid; place-items: center;
+  background: #fafafa; border: 1px solid #eee; border-radius: 4px; overflow: hidden;
+}
+.apercu img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.vide { color: #999; font-size: 13px; }
 small { color: #666; }
 .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 </style>
