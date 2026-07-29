@@ -1,19 +1,33 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useMessage } from 'naive-ui'
 import { api, type Template } from '../api'
 import { useStatus } from '../useStatus'
 import StatusBadge from './StatusBadge.vue'
 import PrintDialog from './PrintDialog.vue'
 
 const statut = useStatus()
-const ETATS: Record<string, string> = {
-  en_attente: 'en attente',
-  envoi: 'envoi…',
-  erreur: 'erreur',
-}
+const message = useMessage()
 
-// pas d'historique au kiosque : seulement la file active et les erreurs
-const fileVisible = computed(() => (statut.value.file ?? []).filter((j) => j.etat !== 'ok'))
+// pas de file affichée au kiosque : un simple flash message quand un job
+// aboutit ou échoue (le premier relevé ne notifie pas ce qui date d'avant)
+const etatsVus = new Map<number, string>()
+let premierReleve = true
+watch(
+  () => statut.value.file,
+  (file) => {
+    for (const j of file ?? []) {
+      const avant = etatsVus.get(j.id)
+      etatsVus.set(j.id, j.etat)
+      if (premierReleve || avant === j.etat) continue
+      if (j.etat === 'ok')
+        message.success(`${j.template_nom} × ${j.quantite} : imprimée${j.quantite > 1 ? 's' : ''}`)
+      if (j.etat === 'erreur')
+        message.error(`${j.template_nom} : ${j.erreur_message ?? 'erreur'}`, { duration: 8000 })
+    }
+    premierReleve = false
+  }
+)
 
 const templates = ref<Template[]>([])
 const templateChoisi = ref<Template | null>(null)
@@ -42,12 +56,6 @@ const sections = computed(() => {
       <StatusBadge />
       <router-link class="lien-admin" to="/admin/modeles">Administration</router-link>
     </header>
-
-    <div v-if="fileVisible.length" class="file" data-testid="file-impression">
-      <span v-for="j in fileVisible" :key="j.id" class="job" :class="j.etat">
-        {{ j.template_nom }} × {{ j.quantite }} : {{ ETATS[j.etat] }}<template v-if="j.erreur_message"> — {{ j.erreur_message }}</template>
-      </span>
-    </div>
 
     <template v-for="s in sections" :key="s.categorie">
       <h2 v-if="s.categorie" class="section">{{ s.categorie }}</h2>
@@ -78,11 +86,6 @@ const sections = computed(() => {
 <style scoped>
 .kiosque { min-height: 100vh; padding: 16px 24px; }
 .lien-admin { color: #999; font-size: 14px; text-decoration: none; }
-.file { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0 0; }
-.job { padding: 4px 12px; border-radius: 999px; font-size: 13px; background: #f2f2f2; color: #555; }
-.job.envoi { background: #fdf3e7; color: #9a5b00; }
-.job.ok { background: #e8f5e9; color: #1b5e20; }
-.job.erreur { background: #fdecea; color: #780000; font-weight: 700; }
 .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 16px 0 24px; }
 .section { margin: 18px 0 0; font-size: 16px; color: #780000; border-bottom: 1px solid #eee; padding-bottom: 4px; }
 .aucun { color: #999; text-align: center; padding: 48px 0; }
