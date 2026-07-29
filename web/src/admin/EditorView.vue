@@ -191,6 +191,25 @@ function dessinerGrille() {
   }
 }
 
+// Un objet ne peut pas sortir de l'étiquette : sa boîte englobante (rotation
+// comprise) est ramenée dans les bords. Un objet plus grand que l'étiquette
+// reste plaqué au bord le plus proche.
+function contenir(o: any) {
+  const { w, h } = labelPx()
+  o.setCoords()
+  const b = o.getBoundingRect()
+  let dx = 0
+  let dy = 0
+  if (b.left < 0) dx = -b.left
+  if (b.top < 0) dy = -b.top
+  if (b.left + b.width > w) dx = w - b.left - b.width
+  if (b.top + b.height > h) dy = h - b.top - b.height
+  if (dx || dy) {
+    o.set({ left: o.left + dx, top: o.top + dy })
+    o.setCoords()
+  }
+}
+
 // Seuls les rectangles se redimensionnent librement (uniformScaling: false).
 // Tout le reste est verrouillé :
 // - texte : jamais étiré — il ne dépend que de son contenu et de sa taille de
@@ -368,6 +387,12 @@ onMounted(async () => {
   c.on('object:moving', (e) => {
     const o = e.target!
     o.set({ left: Math.round(o.left! / pas1) * pas1, top: Math.round(o.top! / pas1) * pas1 })
+    contenir(o)
+  })
+  // après redimensionnement ou rotation, on ramène aussi l'objet dans l'étiquette
+  // (enregistré avant `marquer` : l'historique capture l'état déjà contenu)
+  c.on('object:modified', (e: any) => {
+    if (e.target && !e.target.estGrille) contenir(e.target)
   })
   c.on('selection:created', () => (selection.value = c.getActiveObject()))
   c.on('selection:updated', () => (selection.value = c.getActiveObject()))
