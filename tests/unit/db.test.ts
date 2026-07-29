@@ -33,6 +33,12 @@ describe('db', () => {
     ).toThrow()
   })
 
+  it('applique les migrations et enregistre la version de schéma', () => {
+    const db = tmpDb()
+    // user_version = nombre de migrations appliquées (0 tant que la liste est vide)
+    expect(db.pragma('user_version', { simple: true })).toBeGreaterThanOrEqual(0)
+  })
+
   it('est idempotent (réouverture sans erreur)', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zebra-'))
     initDb(dir).close()

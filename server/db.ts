@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   printer_port: '9100',
   dpi: '300',
   laize_mm: '104',
+  admin_mdp: '', // vide = pas d'authentification ; sinon "sel:empreinte" (scrypt)
   contraste: '15',
   vitesse: '4',
   offset_x: '0',
@@ -49,6 +50,14 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 `
 
+// Migrations de schéma : chaque entrée est un SQL exécuté UNE seule fois, dans
+// l'ordre, sur les bases existantes (suivi via PRAGMA user_version). Toute
+// modification d'une table existante (ALTER TABLE…) s'ajoute ICI, jamais dans
+// SCHEMA (le CREATE IF NOT EXISTS ne rejoue pas sur une base déjà créée).
+const MIGRATIONS: string[] = [
+  // ex. "ALTER TABLE templates ADD COLUMN imprimante_id INTEGER"
+]
+
 export function initDb(dataDir: string): Database.Database {
   fs.mkdirSync(path.join(dataDir, 'logos'), { recursive: true })
   const db = new Database(path.join(dataDir, 'zebra.db'))
@@ -56,6 +65,11 @@ export function initDb(dataDir: string): Database.Database {
   db.exec(SCHEMA)
   const ins = db.prepare('INSERT OR IGNORE INTO settings (cle, valeur) VALUES (?, ?)')
   for (const [cle, valeur] of Object.entries(DEFAULT_SETTINGS)) ins.run(cle, valeur)
+  const version = db.pragma('user_version', { simple: true }) as number
+  for (let i = version; i < MIGRATIONS.length; i++) {
+    db.exec(MIGRATIONS[i])
+    db.pragma(`user_version = ${i + 1}`)
+  }
   return db
 }
 
