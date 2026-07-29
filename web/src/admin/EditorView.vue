@@ -15,7 +15,17 @@ const message = useMessage()
 
 // --- modifications non enregistrées ---
 const modifie = ref(false)
-const pret = ref(false) // vrai une fois le chargement initial terminé
+// empreinte des propriétés telles que chargées/enregistrées : Enregistrer ne
+// s'active que sur un vrai écart — aucune fenêtre de course pendant le
+// chargement (une saisie très tôt compte quand même comme modification)
+const empreinteProps = ref('')
+const proprietes = () =>
+  JSON.stringify([
+    template.value?.nom,
+    template.value?.largeur_mm,
+    template.value?.hauteur_mm,
+    template.value?.dlc_jours,
+  ])
 // ébauche créée par « + Nouveau modèle », jamais enregistrée par l'utilisateur
 const jamaisEnregistre = ref(route.query.neuf === '1')
 
@@ -312,6 +322,7 @@ function insererVariable(v: string) {
 
 onMounted(async () => {
   template.value = await api.get<Template>(`/api/templates/${route.params.id}`)
+  empreinteProps.value = proprietes()
   const reglages = await api.get<Record<string, string>>('/api/settings')
   dpi.value = Number(reglages.dpi)
   laize.value = Number(reglages.laize_mm ?? 104)
@@ -358,7 +369,6 @@ onMounted(async () => {
 
   c.renderAll()
   etatCourant = instantaneCanvas() // point de départ de l'historique
-  pret.value = true
 })
 
 // les propriétés du modèle comptent aussi comme modifications (pas le zoom).
@@ -371,7 +381,7 @@ watch(
     () => template.value?.dlc_jours,
   ],
   () => {
-    if (pret.value) modifie.value = true
+    if (empreinteProps.value && proprietes() !== empreinteProps.value) modifie.value = true
   }
 )
 
@@ -653,6 +663,7 @@ async function enregistrer() {
       doc_json: JSON.stringify(canvas.value!.toObject(['tableauNutritionnel'])),
       vignette_png: await rendreCourant(0.3),
     })
+    empreinteProps.value = proprietes()
     modifie.value = false
     if (jamaisEnregistre.value) {
       jamaisEnregistre.value = false
