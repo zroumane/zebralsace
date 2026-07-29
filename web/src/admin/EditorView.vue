@@ -253,6 +253,8 @@ const alignement = ref('left')
 const couleurTexte = ref('#000000')
 const couleurForme = ref('#000000')
 const bordsArrondis = ref(true)
+const rempli = ref(true)
+const epaisseur = ref(1) // bordure en mm (mode contour)
 watch(selection, (s: any) => {
   if (s?.text !== undefined) {
     police.value = s.fontFamily
@@ -261,7 +263,11 @@ watch(selection, (s: any) => {
     couleurTexte.value = s.fill
   } else if (s) {
     couleurForme.value = s.fill && s.fill !== 'transparent' ? s.fill : s.stroke
-    if (s.rx !== undefined) bordsArrondis.value = s.rx > 0
+    if (s.rx !== undefined) {
+      bordsArrondis.value = s.rx > 0
+      rempli.value = !!(s.fill && s.fill !== 'transparent')
+      if (s.strokeWidth) epaisseur.value = Math.round((s.strokeWidth / mmToPx(1, dpi.value)) * 4) / 4
+    }
   }
 })
 function appliquer(prop: string, valeur: unknown) {
@@ -345,8 +351,19 @@ onMounted(async () => {
   const pas1 = mmToPx(1, dpi.value)
   c.on('object:scaling', (e: any) => {
     const o = e.target
-    if (!o || o.text !== undefined || estLibre(o)) return
-    o.scaleY = o.scaleX // ratio verrouillé pour tout sauf les rectangles
+    if (!o || o.text !== undefined) return
+    if (estLibre(o)) {
+      // rectangle : l'échelle est convertie en vraies dimensions — bordure et
+      // rayons des coins restent constants, rien n'est déformé
+      o.set({
+        width: Math.abs(o.width * o.scaleX),
+        height: Math.abs(o.height * o.scaleY),
+        scaleX: 1,
+        scaleY: 1,
+      })
+      return
+    }
+    o.scaleY = o.scaleX // ratio verrouillé pour tout le reste
   })
   c.on('object:moving', (e) => {
     const o = e.target!
@@ -433,27 +450,9 @@ async function rendreCourant(multiplier: number): Promise<string> {
   })
 }
 
-function ajouterCadre() {
-  const c = canvas.value!
-  c.add(
-    new Rect({
-      left: mmToPx(5, dpi.value),
-      top: mmToPx(5, dpi.value),
-      width: mmToPx(30, dpi.value),
-      height: mmToPx(15, dpi.value),
-      fill: 'transparent',
-      stroke: '#000000',
-      strokeWidth: 3,
-      rx: mmToPx(1.5, dpi.value),
-      ry: mmToPx(1.5, dpi.value),
-    })
-  )
-  c.renderAll()
-}
-
-// rectangle plein à bords arrondis (cartouche — typiquement noir sous texte blanc)
-// Bords carrés possibles via le panneau : un rectangle plat = un trait.
-function ajouterRectanglePlein() {
+// rectangle unique : rempli par défaut (cartouche noir sous texte blanc),
+// « Contour » dans le panneau le transforme en cadre, bords carrés = trait.
+function ajouterRectangle() {
   const c = canvas.value!
   const r = new Rect({
     left: mmToPx(5, dpi.value),
@@ -491,6 +490,26 @@ function appliquerBords(rayonMm: number) {
   o.set({ rx: r, ry: r })
   o.dirty = true
   bordsArrondis.value = rayonMm > 0
+  canvas.value!.requestRenderAll()
+}
+
+// rempli (fond plein) ou contour (bordure seule, épaisseur réglable)
+function appliquerRempli(v: boolean) {
+  const o: any = selection.value
+  if (!o || o.rx === undefined) return
+  const couleur = couleurForme.value || '#000000'
+  if (v) o.set({ fill: couleur, stroke: null })
+  else o.set({ fill: 'transparent', stroke: couleur, strokeWidth: mmToPx(epaisseur.value, dpi.value) })
+  rempli.value = v
+  o.dirty = true
+  canvas.value!.requestRenderAll()
+}
+
+function appliquerEpaisseur(mm: number | null) {
+  const o: any = selection.value
+  if (!o || o.rx === undefined || !mm) return
+  o.set('strokeWidth', mmToPx(mm, dpi.value))
+  o.dirty = true
   canvas.value!.requestRenderAll()
 }
 
@@ -714,8 +733,7 @@ async function enregistrer() {
           <n-button size="small" :disabled="!peutRetablir" data-testid="retablir" @click="retablir" title="Ctrl+Y">↷</n-button>
         </div>
         <n-button data-testid="ajouter-texte" @click="ajouterTexte">+ Texte</n-button>
-        <n-button @click="ajouterCadre">+ Cadre</n-button>
-        <n-button data-testid="ajouter-rectangle" @click="ajouterRectanglePlein">+ Rectangle</n-button>
+        <n-button data-testid="ajouter-rectangle" @click="ajouterRectangle">+ Rectangle</n-button>
         <n-button data-testid="ajouter-tableau" @click="ajouterTableau">+ Tableau nutritionnel</n-button>
         <b>Médias</b>
         <LogoLibrary @pick="placerImage" />
@@ -786,6 +804,26 @@ async function enregistrer() {
             <n-button size="small" :type="couleurForme === '#ffffff' ? 'primary' : 'default'" @click="appliquerCouleurForme('#ffffff')">
               <span class="pastille blanche" /> Blanc
             </n-button>
+          </div>
+          <div v-if="selection.rx !== undefined" style="display: flex; gap: 8px; align-items: center">
+            <span class="libelle-couleur">Style</span>
+            <n-button size="small" data-testid="rect-rempli" :type="rempli ? 'primary' : 'default'" @click="appliquerRempli(true)">Rempli</n-button>
+            <n-button size="small" data-testid="rect-contour" :type="!rempli ? 'primary' : 'default'" @click="appliquerRempli(false)">Contour</n-button>
+          </div>
+          <div v-if="selection.rx !== undefined && !rempli" style="display: flex; gap: 8px; align-items: center">
+            <span class="libelle-couleur">Bordure</span>
+            <n-input-number
+              v-model:value="epaisseur"
+              size="small"
+              :min="0.25"
+              :max="5"
+              :step="0.25"
+              style="width: 120px"
+              data-testid="epaisseur-bordure"
+              @update:value="appliquerEpaisseur"
+            >
+              <template #suffix>mm</template>
+            </n-input-number>
           </div>
           <div v-if="selection.rx !== undefined" style="display: flex; gap: 8px; align-items: center">
             <span class="libelle-couleur">Bords</span>
