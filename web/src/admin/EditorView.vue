@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
-import { Canvas, FabricImage, Line, Rect, Textbox } from 'fabric'
+import { Canvas, FabricImage, FabricText, Group, Line, Rect, Textbox } from 'fabric'
 import { useMessage } from 'naive-ui'
 import { api, type Globale, type Logo, type Template } from '../api'
 import { mmToPx, renderLabel } from '../render'
@@ -43,6 +43,55 @@ onBeforeRouteLeave(async () => {
 const template = ref<Template | null>(null)
 const canvasEl = ref<HTMLCanvasElement>()
 const canvas = shallowRef<Canvas>()
+
+// --- historique : annuler / rétablir (instantanés JSON du canvas) ---
+const pileAnnuler: string[] = []
+const pileRetablir: string[] = []
+let etatCourant = ''
+let enRestauration = false
+const peutAnnuler = ref(false)
+const peutRetablir = ref(false)
+
+function instantaneCanvas(): string {
+  return JSON.stringify(canvas.value!.toObject(['tableauNutritionnel']))
+}
+function majHistorique() {
+  peutAnnuler.value = pileAnnuler.length > 0
+  peutRetablir.value = pileRetablir.length > 0
+}
+function empilerHistorique() {
+  pileAnnuler.push(etatCourant)
+  if (pileAnnuler.length > 50) pileAnnuler.shift()
+  pileRetablir.length = 0
+  etatCourant = instantaneCanvas()
+  majHistorique()
+}
+async function restaurer(etat: string) {
+  enRestauration = true
+  const c = canvas.value!
+  await c.loadFromJSON(JSON.parse(etat))
+  c.backgroundColor = '#ffffff'
+  dessinerGrille()
+  selection.value = null
+  c.renderAll()
+  enRestauration = false
+}
+async function annuler() {
+  if (!pileAnnuler.length) return
+  pileRetablir.push(etatCourant)
+  etatCourant = pileAnnuler.pop()!
+  await restaurer(etatCourant)
+  modifie.value = true
+  majHistorique()
+}
+async function retablir() {
+  if (!pileRetablir.length) return
+  pileAnnuler.push(etatCourant)
+  etatCourant = pileRetablir.pop()!
+  await restaurer(etatCourant)
+  modifie.value = true
+  majHistorique()
+}
 const selection = shallowRef<any>(null)
 const zoom = ref(1)
 const dpi = ref(300)
@@ -199,8 +248,9 @@ onMounted(async () => {
 
   // traque les modifications (la grille, jamais sérialisée, ne compte pas)
   const marquer = (e?: { target?: { estGrille?: boolean } }) => {
-    if (e?.target?.estGrille) return
+    if (enRestauration || e?.target?.estGrille) return
     modifie.value = true
+    empilerHistorique()
   }
   c.on('object:added', marquer)
   c.on('object:removed', marquer)
@@ -208,6 +258,7 @@ onMounted(async () => {
   c.on('text:changed', marquer)
 
   c.renderAll()
+  etatCourant = instantaneCanvas() // point de départ de l'historique
   pret.value = true
 })
 
@@ -235,8 +286,20 @@ watch([zoom, () => template.value?.largeur_mm, () => template.value?.hauteur_mm]
 
 function surTouche(e: KeyboardEvent) {
   const c = canvas.value
-  const actif: any = c?.getActiveObject()
-  if (c && actif && !actif.isEditing && (e.key === 'Delete' || e.key === 'Backspace')) {
+  if (!c) return
+  // Ctrl/Cmd+Z = annuler ; Ctrl/Cmd+Y ou Ctrl/Cmd+Maj+Z = rétablir
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+    e.preventDefault()
+    void (e.shiftKey ? retablir() : annuler())
+    return
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+    e.preventDefault()
+    void retablir()
+    return
+  }
+  const actif: any = c.getActiveObject()
+  if (actif && !actif.isEditing && (e.key === 'Delete' || e.key === 'Backspace')) {
     c.getActiveObjects().forEach((o) => c.remove(o))
     c.discardActiveObject()
     c.renderAll()
@@ -250,7 +313,7 @@ async function rendreCourant(multiplier: number): Promise<string> {
   const t = template.value!
   const globales = await api.get<Globale[]>('/api/globals')
   const auj = new Date()
-  return renderLabel(canvas.value!.toJSON(), {
+  return renderLabel(canvas.value!.toObject(['tableauNutritionnel']), {
     widthMm: t.largeur_mm,
     heightMm: t.hauteur_mm,
     dpi: dpi.value,
@@ -279,19 +342,8 @@ function ajouterCadre() {
   c.renderAll()
 }
 
-function ajouterTrait() {
-  const c = canvas.value!
-  const l = new Line([0, 0, mmToPx(40, dpi.value), 0], {
-    left: mmToPx(5, dpi.value),
-    top: mmToPx(10, dpi.value),
-    stroke: '#000000',
-    strokeWidth: 3,
-  })
-  c.add(l)
-  c.renderAll()
-}
-
 // rectangle plein à bords arrondis (cartouche — typiquement noir sous texte blanc)
+// Bords carrés possibles via le panneau : un rectangle plat = un trait.
 function ajouterRectanglePlein() {
   const c = canvas.value!
   const r = new Rect({
@@ -320,6 +372,17 @@ function appliquerCouleurTexte(couleur: string) {
   canvas.value!.requestRenderAll()
 }
 
+// bords d'un rectangle : arrondis (2 mm) ou carrés (0) — carrés + rectangle
+// plat = un trait / une barre
+function appliquerBords(rayonMm: number) {
+  const o: any = selection.value
+  if (!o || o.rx === undefined) return
+  const r = mmToPx(rayonMm, dpi.value)
+  o.set({ rx: r, ry: r })
+  o.dirty = true
+  canvas.value!.requestRenderAll()
+}
+
 // couleur d'une forme : le fond s'il est plein, le trait s'il existe
 function appliquerCouleurForme(couleur: string) {
   const o: any = selection.value
@@ -327,6 +390,132 @@ function appliquerCouleurForme(couleur: string) {
   if (o.fill && o.fill !== 'transparent') o.set('fill', couleur)
   if (o.stroke) o.set('stroke', couleur)
   canvas.value!.requestRenderAll()
+}
+
+// --- tableau nutritionnel (format INCO : libellés fixes, valeurs éditables) ---
+interface ValeursNutritionnelles {
+  titre: string
+  energie: string
+  lipides: string
+  satures: string
+  glucides: string
+  sucres: string
+  proteines: string
+  sel: string
+}
+
+const LIGNES_NUT: Array<{ label: string; cle: keyof ValeursNutritionnelles; sep: boolean }> = [
+  { label: 'Énergie', cle: 'energie', sep: true },
+  { label: 'Lipides', cle: 'lipides', sep: false },
+  { label: 'dont acides gras saturés', cle: 'satures', sep: true },
+  { label: 'Glucides', cle: 'glucides', sep: false },
+  { label: 'dont sucres', cle: 'sucres', sep: true },
+  { label: 'Protéines', cle: 'proteines', sep: true },
+  { label: 'Sel', cle: 'sel', sep: false },
+]
+
+const NUT_DEFAUT = (): ValeursNutritionnelles => ({
+  titre: 'Valeurs nutritives moyennes pour 100 g',
+  energie: '',
+  lipides: '',
+  satures: '',
+  glucides: '',
+  sucres: '',
+  proteines: '',
+  sel: '',
+})
+
+const tableauOuvert = ref(false)
+// shallowRef obligatoire : une ref profonde enrobe l'objet fabric dans un Proxy
+// et canvas.remove(proxy) ne retrouve pas l'instance originale
+const tableauEnEdition = shallowRef<any>(null)
+const valNut = ref<ValeursNutritionnelles>(NUT_DEFAUT())
+
+function construireTableau(v: ValeursNutritionnelles): Group {
+  const mm = (x: number) => mmToPx(x, dpi.value)
+  const largeur = mm(60)
+  const pad = mm(2)
+  const ligneH = mm(4.6)
+  const police = { fontFamily: 'Roboto', fill: '#000000' }
+  const elements: any[] = []
+  let y = pad
+
+  elements.push(
+    new Textbox(v.titre, {
+      left: 0,
+      top: y,
+      width: largeur,
+      fontSize: mm(3),
+      fontWeight: '700',
+      textAlign: 'center',
+      ...police,
+    })
+  )
+  y += ligneH
+  elements.push(new Line([pad / 2, y, largeur - pad / 2, y], { stroke: '#000000', strokeWidth: 2 }))
+  y += mm(1)
+
+  for (const l of LIGNES_NUT) {
+    const valeur = v[l.cle].trim()
+    if (!valeur) continue
+    elements.push(new FabricText(l.label, { left: pad, top: y, fontSize: mm(2.8), ...police }))
+    const t = new FabricText(valeur, { fontSize: mm(2.8), ...police })
+    t.set({ left: largeur - pad - t.width!, top: y })
+    elements.push(t)
+    y += ligneH
+    if (l.sep) {
+      elements.push(
+        new Line([pad / 2, y - mm(0.7), largeur - pad / 2, y - mm(0.7)], { stroke: '#000000', strokeWidth: 2 })
+      )
+      y += mm(0.6)
+    }
+  }
+
+  elements.unshift(
+    new Rect({
+      left: 0,
+      top: 0,
+      width: largeur,
+      height: y + pad,
+      fill: 'transparent',
+      stroke: '#000000',
+      strokeWidth: 3,
+      rx: mm(1.5),
+      ry: mm(1.5),
+    })
+  )
+  const g = new Group(elements, { left: mm(5), top: mm(5) })
+  ;(g as any).tableauNutritionnel = { ...v }
+  return g
+}
+
+function ouvrirTableau() {
+  tableauEnEdition.value = null
+  valNut.value = NUT_DEFAUT()
+  tableauOuvert.value = true
+}
+
+function ouvrirEditionTableau() {
+  const o: any = selection.value
+  if (!o?.tableauNutritionnel) return
+  tableauEnEdition.value = o
+  valNut.value = { ...NUT_DEFAUT(), ...o.tableauNutritionnel }
+  tableauOuvert.value = true
+}
+
+function validerTableau() {
+  const c = canvas.value!
+  const g = construireTableau(valNut.value)
+  const ancien: any = tableauEnEdition.value
+  if (ancien) {
+    g.set({ left: ancien.left, top: ancien.top, scaleX: ancien.scaleX, scaleY: ancien.scaleY, angle: ancien.angle })
+    c.remove(ancien)
+  }
+  c.add(g)
+  c.setActiveObject(g)
+  c.renderAll()
+  tableauOuvert.value = false
+  tableauEnEdition.value = null
 }
 
 const apercuJour = ref<string | null>(null)
@@ -357,7 +546,9 @@ async function enregistrer() {
       largeur_mm: t.largeur_mm,
       hauteur_mm: t.hauteur_mm,
       dlc_jours: t.dlc_jours,
-      doc_json: JSON.stringify(canvas.value!.toJSON()),
+      // toObject(['tableauNutritionnel']) : conserve les valeurs des tableaux
+      // nutritionnels pour pouvoir les rééditer
+      doc_json: JSON.stringify(canvas.value!.toObject(['tableauNutritionnel'])),
       vignette_png: await rendreCourant(0.3),
     })
     modifie.value = false
@@ -394,11 +585,15 @@ async function enregistrer() {
     <div class="corps">
       <div class="outils">
         <!-- boutons d'ajout : tasks 13, 14, 15 -->
+        <div style="display: flex; gap: 6px">
+          <n-button size="small" :disabled="!peutAnnuler" data-testid="annuler" @click="annuler" title="Ctrl+Z">↶ Annuler</n-button>
+          <n-button size="small" :disabled="!peutRetablir" data-testid="retablir" @click="retablir" title="Ctrl+Y">↷</n-button>
+        </div>
         <n-button data-testid="ajouter-texte" @click="ajouterTexte">+ Texte</n-button>
         <n-button @click="ajouterCadre">+ Cadre</n-button>
         <n-button data-testid="ajouter-rectangle" @click="ajouterRectanglePlein">+ Rectangle</n-button>
-        <n-button @click="ajouterTrait">+ Trait</n-button>
-        <n-button tertiary data-testid="apercu-jour" @click="apercuValeursDuJour">Aperçu valeurs du jour</n-button>
+        <n-button data-testid="ajouter-tableau" @click="ouvrirTableau">+ Tableau nutritionnel</n-button>
+        <n-button tertiary data-testid="apercu-jour" @click="apercuValeursDuJour">Aperçu</n-button>
         <n-button tertiary data-testid="imprimer-test" @click="imprimerTest">Imprimer un test</n-button>
         <b>Médias</b>
         <LogoLibrary @pick="placerImage" />
@@ -444,6 +639,14 @@ async function enregistrer() {
           </p>
         </template>
 
+        <template v-else-if="selection && selection.tableauNutritionnel">
+          <b>Tableau nutritionnel</b>
+          <n-button size="small" data-testid="modifier-tableau" @click="ouvrirEditionTableau">
+            Modifier les valeurs
+          </n-button>
+          <p class="astuce">Les lignes laissées vides ne sont pas affichées.</p>
+        </template>
+
         <template v-else-if="selection && String(selection.type).toLowerCase() !== 'image'">
           <b>Forme</b>
           <div style="display: flex; gap: 8px; align-items: center">
@@ -455,9 +658,15 @@ async function enregistrer() {
               <span class="pastille blanche" /> Blanc
             </n-button>
           </div>
+          <div v-if="selection.rx !== undefined" style="display: flex; gap: 8px; align-items: center">
+            <span class="libelle-couleur">Bords</span>
+            <n-button size="small" @click="appliquerBords(2)">Arrondis</n-button>
+            <n-button size="small" data-testid="bords-carres" @click="appliquerBords(0)">Carrés</n-button>
+          </div>
           <p class="astuce">
             Une forme blanche est invisible sur le fond blanc de l'étiquette —
             utile posée sur un rectangle noir (texte ou détourage en blanc).
+            Un rectangle plat à bords carrés fait office de trait.
           </p>
         </template>
 
@@ -474,8 +683,34 @@ async function enregistrer() {
       </div>
     </div>
 
+    <n-modal :show="tableauOuvert" @update:show="tableauOuvert = false">
+      <n-card
+        :title="tableauEnEdition ? 'Modifier le tableau nutritionnel' : 'Tableau nutritionnel'"
+        style="max-width: 480px"
+        closable
+        @close="tableauOuvert = false"
+      >
+        <div class="form-tableau">
+          <label>Titre <n-input v-model:value="valNut.titre" data-testid="nut-titre" /></label>
+          <label>Énergie <n-input v-model:value="valNut.energie" data-testid="nut-energie" placeholder="ex. 217,57 kcal / 912,57 kJ" /></label>
+          <label>Lipides <n-input v-model:value="valNut.lipides" data-testid="nut-lipides" placeholder="ex. 10,33 g" /></label>
+          <label>dont acides gras saturés <n-input v-model:value="valNut.satures" data-testid="nut-satures" placeholder="ex. 3,76 g" /></label>
+          <label>Glucides <n-input v-model:value="valNut.glucides" data-testid="nut-glucides" placeholder="ex. 5,13 g" /></label>
+          <label>dont sucres <n-input v-model:value="valNut.sucres" data-testid="nut-sucres" placeholder="ex. 3,09 g" /></label>
+          <label>Protéines <n-input v-model:value="valNut.proteines" data-testid="nut-proteines" placeholder="ex. 7,86 g" /></label>
+          <label>Sel <n-input v-model:value="valNut.sel" data-testid="nut-sel" placeholder="ex. 1,48 g" /></label>
+          <p class="astuce">Une ligne laissée vide n'apparaît pas dans le tableau.</p>
+        </div>
+        <template #footer>
+          <n-button type="primary" data-testid="valider-tableau" @click="validerTableau">
+            {{ tableauEnEdition ? 'Appliquer' : 'Insérer' }}
+          </n-button>
+        </template>
+      </n-card>
+    </n-modal>
+
     <n-modal :show="!!apercuJour" @update:show="apercuJour = null">
-      <n-card title="Aperçu (valeurs du jour)" style="max-width: 900px" closable @close="apercuJour = null">
+      <n-card title="Aperçu" style="max-width: 900px" closable @close="apercuJour = null">
         <img v-if="apercuJour" :src="apercuJour" alt="aperçu" style="width: 100%; border: 1px solid #e5e5e5" />
       </n-card>
     </n-modal>
@@ -496,6 +731,8 @@ header label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .props { width: 260px; padding: 12px; border-left: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 12px; }
 .astuce { font-size: 12px; color: #999; margin: 0; }
 .libelle-couleur { font-size: 13px; font-weight: 700; }
+.form-tableau { display: flex; flex-direction: column; gap: 10px; }
+.form-tableau label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; }
 .pastille { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 6px; }
 .pastille.noire { background: #000; }
 .pastille.blanche { background: #fff; border: 1px solid #ccc; }
