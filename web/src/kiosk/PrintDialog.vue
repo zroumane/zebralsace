@@ -105,7 +105,10 @@ async function imprimer() {
 
 <template>
   <n-modal :show="true" @update:show="emit('close')">
-    <n-card :title="template.nom" style="max-width: 900px" closable @close="emit('close')">
+    <n-card :title="template.nom" class="plein-ecran">
+      <template #header-extra>
+        <button class="fermer" data-testid="fermer-impression" title="Fermer" @click="emit('close')">✕</button>
+      </template>
       <div class="contenu">
         <img class="apercu" :src="apercu" alt="aperçu de l'étiquette" data-testid="apercu" />
         <div class="reglages">
@@ -162,8 +165,15 @@ async function imprimer() {
 </template>
 
 <style scoped>
-.contenu { display: flex; gap: 24px; align-items: flex-start; }
-.apercu { flex: 1; min-width: 0; border: 1px solid #e5e5e5; }
+/* le popup occupe tout l'écran (kiosque tactile) */
+.plein-ecran { width: 100vw; height: 100vh; max-width: none; border-radius: 0; }
+.fermer {
+  font-size: 40px; line-height: 1; padding: 0 12px; background: none; border: none;
+  cursor: pointer; color: #333;
+}
+.fermer:active { color: #c1121f; }
+.contenu { display: flex; gap: 32px; align-items: flex-start; height: 100%; }
+.apercu { flex: 1; min-width: 0; border: 1px solid #e5e5e5; max-height: calc(100vh - 140px); object-fit: contain; }
 .reglages { width: 280px; display: flex; flex-direction: column; gap: 16px; }
 label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; }
 label input { font-size: 18px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }

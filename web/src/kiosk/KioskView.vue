@@ -9,9 +9,11 @@ const statut = useStatus()
 const ETATS: Record<string, string> = {
   en_attente: 'en attente',
   envoi: 'envoi…',
-  ok: 'imprimée',
   erreur: 'erreur',
 }
+
+// pas d'historique au kiosque : seulement la file active et les erreurs
+const fileVisible = computed(() => (statut.value.file ?? []).filter((j) => j.etat !== 'ok'))
 
 const templates = ref<Template[]>([])
 const templateChoisi = ref<Template | null>(null)
@@ -41,8 +43,8 @@ const sections = computed(() => {
       <router-link class="lien-admin" to="/admin/modeles">Administration</router-link>
     </header>
 
-    <div v-if="statut.file?.length" class="file" data-testid="file-impression">
-      <span v-for="j in statut.file" :key="j.id" class="job" :class="j.etat">
+    <div v-if="fileVisible.length" class="file" data-testid="file-impression">
+      <span v-for="j in fileVisible" :key="j.id" class="job" :class="j.etat">
         {{ j.template_nom }} × {{ j.quantite }} : {{ ETATS[j.etat] }}<template v-if="j.erreur_message"> — {{ j.erreur_message }}</template>
       </span>
     </div>

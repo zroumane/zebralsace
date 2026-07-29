@@ -33,9 +33,6 @@ test('impression de bout en bout depuis le kiosque', async ({ page, request }) =
   await page.getByTestId('imprimer').click()
   await expect(page.getByText(/ajoutée/)).toBeVisible()
 
-  // le job apparaît dans la file affichée au kiosque (polling 4 s)
-  await expect(page.getByTestId('file-impression')).toContainText('Impression e2e', { timeout: 10_000 })
-
   await expect.poll(() => imprimante.recu.join('')).toContain('^PQ1')
   await expect
     .poll(async () => (await (await request.get('/api/print-log')).json())[0]?.statut)
