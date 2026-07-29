@@ -108,26 +108,32 @@ async function imprimer() {
 
 <template>
   <n-modal :show="true" @update:show="emit('close')">
-    <n-card :title="template.nom" class="plein-ecran">
+    <n-card class="plein-ecran" :content-style="{ display: 'flex', overflow: 'auto' }">
+      <template #header>
+        {{ template.nom }}
+        <span class="dims">{{ template.largeur_mm }} × {{ template.hauteur_mm }} mm</span>
+      </template>
       <template #header-extra>
         <button class="fermer" data-testid="fermer-impression" title="Fermer" @click="emit('close')">✕</button>
       </template>
       <div class="contenu">
         <img class="apercu" :src="apercu" alt="aperçu de l'étiquette" data-testid="apercu" />
         <div class="reglages">
-          <div class="date-choix" :class="{ inactif: !avecDate }">
-            <n-checkbox v-model:checked="avecDate" data-testid="avec-date">Date de fabrication</n-checkbox>
-            <input v-model="fabrication" type="date" :disabled="!avecDate" data-testid="date-fabrication" />
-          </div>
-          <div class="date-choix" :class="{ inactif: !avecDlc }">
-            <n-checkbox v-model:checked="avecDlc" data-testid="avec-dlc">Date de péremption</n-checkbox>
-            <input
-              v-model="peremption"
-              type="date"
-              :disabled="!avecDlc"
-              data-testid="date-peremption"
-              @input="peremptionTouchee = true"
-            />
+          <div class="dates">
+            <div class="date-choix" :class="{ inactif: !avecDate }">
+              <n-checkbox v-model:checked="avecDate" data-testid="avec-date">Date de fabrication</n-checkbox>
+              <input v-model="fabrication" type="date" :disabled="!avecDate" data-testid="date-fabrication" />
+            </div>
+            <div class="date-choix" :class="{ inactif: !avecDlc }">
+              <n-checkbox v-model:checked="avecDlc" data-testid="avec-dlc">Date de péremption</n-checkbox>
+              <input
+                v-model="peremption"
+                type="date"
+                :disabled="!avecDlc"
+                data-testid="date-peremption"
+                @input="peremptionTouchee = true"
+              />
+            </div>
           </div>
 
           <div class="quantite">
@@ -150,6 +156,7 @@ async function imprimer() {
             type="primary"
             size="large"
             block
+            class="btn-imprimer"
             :disabled="!peutImprimer"
             data-testid="imprimer"
             @click="imprimer"
@@ -171,9 +178,14 @@ async function imprimer() {
   cursor: pointer; color: #333;
 }
 .fermer:active { color: #c1121f; }
-.contenu { display: flex; gap: 32px; align-items: flex-start; height: 100%; }
-.apercu { flex: 1; min-width: 0; border: 1px solid #e5e5e5; max-height: calc(100vh - 140px); object-fit: contain; }
-.reglages { width: 440px; display: flex; flex-direction: column; gap: 16px; }
+.dims { font-size: 15px; font-weight: 400; color: #888; margin-left: 10px; }
+.contenu { display: flex; gap: 32px; flex: 1; min-height: 0; }
+.apercu { flex: 1; min-width: 0; align-self: flex-start; border: 1px solid #e5e5e5; max-height: calc(100vh - 140px); object-fit: contain; }
+.reglages { width: 440px; display: flex; flex-direction: column; gap: 20px; }
+/* les deux dates côte à côte, IMPRIMER calé en bas de la colonne */
+.dates { display: flex; gap: 16px; }
+.dates .date-choix { flex: 1; }
+.btn-imprimer { margin-top: auto; --n-height: 64px !important; font-size: 20px; }
 .date-choix { display: flex; flex-direction: column; gap: 6px; }
 .date-choix :deep(.n-checkbox__label) { font-weight: 700; }
 .date-choix input { font-size: 18px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
