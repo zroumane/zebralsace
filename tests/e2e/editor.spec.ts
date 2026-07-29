@@ -15,6 +15,20 @@ test('éditeur : chargement, renommage, sauvegarde avec vignette', async ({ page
   expect(t.vignette_png).toMatch(/^data:image\/png/)
 })
 
+test('zoom à la molette avec Ctrl', async ({ page, request }) => {
+  const { id } = await (await request.post('/api/templates', { data: { nom: 'Zoom e2e' } })).json()
+
+  await page.goto(`/admin/templates/${id}`)
+  await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
+  await expect(page.getByTestId('zoom')).toHaveText('100 %')
+
+  await page.locator('.zone-canvas').hover()
+  await page.keyboard.down('Control')
+  await page.mouse.wheel(0, -100)
+  await page.keyboard.up('Control')
+  await expect(page.getByTestId('zoom')).toHaveText('110 %')
+})
+
 test('annuler / rétablir', async ({ page, request }) => {
   const { id } = await (await request.post('/api/templates', { data: { nom: 'Undo e2e' } })).json()
 

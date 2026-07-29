@@ -43,6 +43,57 @@ onBeforeRouteLeave(async () => {
 const template = ref<Template | null>(null)
 const canvasEl = ref<HTMLCanvasElement>()
 const canvas = shallowRef<Canvas>()
+const zoneCanvas = ref<HTMLElement>()
+
+// --- zoom (Ctrl + molette, centré sur le curseur) et déplacement (Ctrl + glisser) ---
+function changerZoom(facteur: number, pivot?: { x: number; y: number }) {
+  const nouveau = Math.min(4, Math.max(0.25, zoom.value * facteur))
+  if (nouveau === zoom.value) return
+  const zone = zoneCanvas.value
+  const ratio = nouveau / zoom.value
+  const rect = zone?.getBoundingClientRect()
+  const px = pivot && rect ? pivot.x - rect.left : 0
+  const py = pivot && rect ? pivot.y - rect.top : 0
+  const cx = zone ? zone.scrollLeft + px : 0
+  const cy = zone ? zone.scrollTop + py : 0
+  zoom.value = nouveau // le watch redimensionne le canvas et redessine la grille
+  requestAnimationFrame(() => {
+    if (!zone) return
+    zone.scrollLeft = cx * ratio - px
+    zone.scrollTop = cy * ratio - py
+  })
+}
+
+function surMolette(e: WheelEvent) {
+  if (!e.ctrlKey) return // molette seule = défilement normal de la zone
+  e.preventDefault()
+  changerZoom(e.deltaY < 0 ? 1.1 : 1 / 1.1, { x: e.clientX, y: e.clientY })
+}
+
+let pan: { x: number; y: number; sx: number; sy: number } | null = null
+function debutPan(e: MouseEvent) {
+  if (!e.ctrlKey || e.button !== 0) return
+  e.preventDefault()
+  e.stopPropagation() // fabric ne doit ni sélectionner ni déplacer d'objet
+  const zone = zoneCanvas.value!
+  pan = { x: e.clientX, y: e.clientY, sx: zone.scrollLeft, sy: zone.scrollTop }
+  zone.classList.add('pan-en-cours')
+  window.addEventListener('mousemove', bougePan)
+  window.addEventListener('mouseup', finPan)
+}
+function bougePan(e: MouseEvent) {
+  if (!pan) return
+  const zone = zoneCanvas.value!
+  zone.scrollLeft = pan.sx - (e.clientX - pan.x)
+  zone.scrollTop = pan.sy - (e.clientY - pan.y)
+}
+function finPan() {
+  pan = null
+  zoneCanvas.value?.classList.remove('pan-en-cours')
+  window.removeEventListener('mousemove', bougePan)
+  window.removeEventListener('mouseup', finPan)
+}
+onBeforeUnmount(finPan)
 
 // --- historique : annuler / rétablir (instantanés JSON du canvas) ---
 const pileAnnuler: string[] = []
@@ -574,12 +625,11 @@ async function enregistrer() {
       <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="laize" size="small" /></label>
       <label>Hauteur (mm) <n-input-number v-model:value="template.hauteur_mm" :min="10" :max="300" size="small" /></label>
       <label>DLC (jours) <n-input-number v-model:value="template.dlc_jours" :min="0" :max="365" size="small" /></label>
-      <n-select
-        v-model:value="zoom"
-        size="small"
-        style="width: 100px"
-        :options="[0.5, 1, 1.5, 2].map((v) => ({ label: `${v * 100} %`, value: v }))"
-      />
+      <div class="zoom-ctrl" title="Ctrl + molette pour zoomer, Ctrl + glisser pour se déplacer">
+        <n-button size="small" quaternary @click="changerZoom(1 / 1.25)">−</n-button>
+        <span class="zoom-affiche" data-testid="zoom">{{ Math.round(zoom * 100) }} %</span>
+        <n-button size="small" quaternary @click="changerZoom(1.25)">+</n-button>
+      </div>
     </header>
 
     <div class="corps">
@@ -598,7 +648,14 @@ async function enregistrer() {
         <b>Médias</b>
         <LogoLibrary @pick="placerImage" />
       </div>
-      <div class="zone-canvas"><canvas ref="canvasEl" /></div>
+      <div
+        ref="zoneCanvas"
+        class="zone-canvas"
+        @wheel="surMolette"
+        @mousedown.capture="debutPan"
+      >
+        <canvas ref="canvasEl" />
+      </div>
       <div class="props">
         <!-- panneau de propriétés : task 13 -->
         <template v-if="selection?.text !== undefined">
@@ -727,6 +784,9 @@ header label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .corps { flex: 1; display: flex; min-height: 0; }
 .outils { width: 200px; padding: 12px; border-right: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 8px; }
 .zone-canvas { flex: 1; overflow: auto; background: #f7f7f7; padding: 24px; }
+.zone-canvas.pan-en-cours { cursor: grabbing; user-select: none; }
+.zoom-ctrl { display: flex; align-items: center; gap: 4px; }
+.zoom-affiche { font-size: 13px; color: #555; min-width: 48px; text-align: center; }
 .zone-canvas canvas { box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15); }
 .props { width: 260px; padding: 12px; border-left: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 12px; }
 .astuce { font-size: 12px; color: #999; margin: 0; }
