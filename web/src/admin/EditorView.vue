@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { h, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { Canvas, FabricImage, FabricText, Group, Line, Rect, Textbox } from 'fabric'
 import { useMessage } from 'naive-ui'
 import { api, type Globale, type Logo, type Template } from '../api'
-import { mmToPx, renderLabel } from '../render'
+import { FAMILLES_POLICES, POLICES, mmToPx, renderLabel } from '../render'
 import { addDays, computeVars } from '../vars'
 import BoutonRetour from '../BoutonRetour.vue'
 import LogoLibrary from './LogoLibrary.vue'
@@ -232,6 +232,10 @@ async function placerImage(logo: Logo) {
   canvas.value!.renderAll()
 }
 
+// chaque entrée du sélecteur de police s'affiche dans sa propre police
+const afficherPolice = (o: { label: string; value: string }) =>
+  h('span', { style: { fontFamily: o.value } }, o.label)
+
 // Propriétés texte : copie locale sur sélection, application au changement
 const police = ref('Roboto')
 const taille = ref(24)
@@ -311,7 +315,7 @@ onMounted(async () => {
   const reglages = await api.get<Record<string, string>>('/api/settings')
   dpi.value = Number(reglages.dpi)
   laize.value = Number(reglages.laize_mm ?? 104)
-  await Promise.all(['400 16px Roboto', '700 16px Roboto'].map((f) => document.fonts.load(f)))
+  await Promise.all(POLICES.map((f) => document.fonts.load(f)))
 
   const c = new Canvas(canvasEl.value!, {
     backgroundColor: '#ffffff',
@@ -709,10 +713,8 @@ async function enregistrer() {
           <b>Bloc texte</b>
           <n-select
             v-model:value="police"
-            :options="[
-              { label: 'Roboto', value: 'Roboto' },
-              { label: 'Roboto Condensed', value: 'Roboto Condensed' },
-            ]"
+            :options="FAMILLES_POLICES.map((f) => ({ label: f, value: f }))"
+            :render-label="afficherPolice"
           />
           <n-input-number v-model:value="taille" :min="8" :max="400">
             <template #suffix>px</template>

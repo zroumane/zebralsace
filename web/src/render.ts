@@ -21,12 +21,19 @@ export interface RenderOpts {
   multiplier?: number
 }
 
-const POLICES = [
-  '400 16px Roboto',
-  '700 16px Roboto',
-  "400 16px 'Roboto Condensed'",
-  "700 16px 'Roboto Condensed'",
+// Polices embarquées (@fontsource, aucun appel réseau externe). Une seule
+// liste : le sélecteur de l'éditeur et l'attente de chargement en découlent.
+export const FAMILLES_POLICES = [
+  'Roboto',
+  'Roboto Condensed',
+  'Open Sans',
+  'Lato',
+  'Montserrat',
+  'Oswald',
+  'Playfair Display',
+  'Merriweather',
 ]
+export const POLICES = FAMILLES_POLICES.flatMap((f) => [`400 16px '${f}'`, `700 16px '${f}'`])
 
 export async function renderLabel(doc: any, o: RenderOpts): Promise<string> {
   await Promise.all(POLICES.map((p) => document.fonts.load(p)))
