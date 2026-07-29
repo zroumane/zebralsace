@@ -34,6 +34,10 @@ api.get<Template>(`/api/templates/${props.template.id}`).then((t) => {
 
 const sansDlc = ref(false)
 const quantite = ref(1)
+
+function ajouterQuantite(n: number) {
+  quantite.value = Math.min(99999999, Math.max(1, quantite.value + n))
+}
 const apercu = ref('')
 const impressionEnCours = ref(false)
 const globales = ref<Globale[]>([])
@@ -124,7 +128,9 @@ async function imprimer() {
           </n-checkbox>
 
           <div class="quantite">
-            <n-button size="large" secondary :disabled="quantite <= 1" @click="quantite--">−</n-button>
+            <n-button size="large" secondary :disabled="quantite <= 1" @click="ajouterQuantite(-10)">−10</n-button>
+            <n-button size="large" secondary :disabled="quantite <= 1" @click="ajouterQuantite(-5)">−5</n-button>
+            <n-button size="large" secondary :disabled="quantite <= 1" @click="ajouterQuantite(-1)">−</n-button>
             <n-input-number
               v-model:value="quantite"
               size="large"
@@ -133,7 +139,9 @@ async function imprimer() {
               :show-button="false"
               data-testid="quantite"
             />
-            <n-button size="large" secondary :disabled="quantite >= 99999999" @click="quantite++">+</n-button>
+            <n-button size="large" secondary @click="ajouterQuantite(1)">+</n-button>
+            <n-button size="large" secondary @click="ajouterQuantite(5)">+5</n-button>
+            <n-button size="large" secondary @click="ajouterQuantite(10)">+10</n-button>
           </div>
 
           <n-button
@@ -160,7 +168,7 @@ async function imprimer() {
 label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; }
 label input { font-size: 18px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
 .inactif { opacity: 0.45; }
-.quantite { display: flex; gap: 8px; }
-.quantite :deep(.n-input-number) { flex: 1; }
+.quantite { display: flex; flex-wrap: wrap; gap: 8px; }
+.quantite :deep(.n-input-number) { flex: 1; min-width: 90px; }
 .bloque { color: #780000; font-weight: 700; margin: 0; }
 </style>

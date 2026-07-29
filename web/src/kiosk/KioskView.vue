@@ -44,10 +44,7 @@ onMounted(charger)
         :data-testid="`template-${t.id}`"
         @click="templateChoisi = t"
       >
-        <img v-if="t.vignette_png" :src="t.vignette_png" :alt="t.nom" />
-        <div v-else class="vide">Aperçu à venir</div>
         <span>{{ t.nom }}</span>
-        <small class="format">{{ t.largeur_mm }} × {{ t.hauteur_mm }} mm</small>
       </button>
       <p v-if="!templates.length" class="aucun">
         Aucun modèle d'étiquette. Créez-en un depuis l'administration.
@@ -75,12 +72,10 @@ h1 { flex: 1; margin: 0; font-size: 28px; }
 .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 24px 0; }
 .carte {
   background: #fff; border: 2px solid #e5e5e5; border-radius: 10px;
-  padding: 12px; cursor: pointer; font: inherit; text-align: center;
+  min-height: 110px; padding: 16px; cursor: pointer; font: inherit;
+  display: grid; place-items: center;
 }
 .carte:active { border-color: #c1121f; }
-.carte img { width: 100%; border: 1px solid #eee; }
-.carte .vide { aspect-ratio: 2; display: grid; place-items: center; color: #999; background: #f7f7f7; }
-.carte span { display: block; margin-top: 8px; font-weight: 700; font-size: 18px; }
-.carte .format { display: block; margin-top: 2px; font-size: 12px; color: #999; }
+.carte span { font-weight: 700; font-size: 22px; text-align: center; }
 .aucun { color: #999; grid-column: 1 / -1; text-align: center; padding: 48px 0; }
 </style>

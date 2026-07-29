@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import { api } from '../api'
+import StatusBadge from '../kiosk/StatusBadge.vue'
 import TemplatesTab from './TemplatesTab.vue'
 import MediaTab from './MediaTab.vue'
 import HistoryTab from './HistoryTab.vue'
@@ -33,6 +34,7 @@ async function connecter() {
   <div class="admin">
     <header>
       <h1>Administration</h1>
+      <StatusBadge />
       <router-link to="/">← Retour au kiosque</router-link>
     </header>
 
