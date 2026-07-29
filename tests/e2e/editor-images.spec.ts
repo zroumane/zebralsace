@@ -23,9 +23,10 @@ test('import nommé dans Médias puis placement depuis l’éditeur', async ({ p
   const logo = logos.find((l: any) => l.nom === 'Logo maison')
   expect(logo).toBeTruthy()
 
-  // renommage via le prompt natif
-  page.once('dialog', (d) => void d.accept('Logo maison v2'))
+  // renommage via le popup
   await page.getByTestId(`renommer-${logo.id}`).click()
+  await page.getByTestId('champ-renommage').locator('input').fill('Logo maison v2')
+  await page.getByTestId('valider-renommage').click()
   await expect
     .poll(async () => (await (await request.get('/api/logos')).json()).find((l: any) => l.id === logo.id)?.nom)
     .toBe('Logo maison v2')

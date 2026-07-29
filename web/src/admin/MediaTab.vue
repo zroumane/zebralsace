@@ -46,9 +46,18 @@ async function surFichier(e: Event) {
   }
 }
 
-async function renommer(l: Logo) {
-  const nom = window.prompt('Nouveau nom :', l.nom)?.trim()
-  if (!nom || nom === l.nom) return
+// renommage dans un vrai popup, comme les catégories des modèles
+const renommage = ref<Logo | null>(null)
+const nouveauNom = ref('')
+function ouvrirRenommage(l: Logo) {
+  renommage.value = l
+  nouveauNom.value = l.nom
+}
+async function validerRenommage() {
+  const l = renommage.value
+  const nom = nouveauNom.value.trim()
+  renommage.value = null
+  if (!l || !nom || nom === l.nom) return
   await api.put(`/api/logos/${l.id}`, { nom })
   await charger()
   message.success(`Renommé en « ${nom} »`)
@@ -159,7 +168,7 @@ async function surDrop(cible: Logo | null) {
           <figcaption>
             <b class="nom-media">{{ l.nom }}</b>
             <span class="actions">
-              <n-button size="tiny" quaternary :data-testid="`renommer-${l.id}`" @click="renommer(l)">Renommer</n-button>
+              <n-button size="tiny" quaternary :data-testid="`renommer-${l.id}`" @click="ouvrirRenommage(l)">Renommer</n-button>
               <n-button size="tiny" quaternary type="error" @click="supprimer(l)">Supprimer</n-button>
             </span>
           </figcaption>
@@ -169,6 +178,19 @@ async function surDrop(cible: Logo | null) {
         </p>
       </div>
     </section>
+
+    <n-modal :show="!!renommage" @update:show="renommage = null">
+      <n-card title="Renommer le média" style="max-width: 400px" closable @close="renommage = null">
+        <n-input
+          v-model:value="nouveauNom"
+          data-testid="champ-renommage"
+          @keyup.enter="validerRenommage"
+        />
+        <template #footer>
+          <n-button type="primary" data-testid="valider-renommage" @click="validerRenommage">Renommer</n-button>
+        </template>
+      </n-card>
+    </n-modal>
   </div>
 </template>
 
