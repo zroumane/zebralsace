@@ -10,11 +10,11 @@ function tmpDb() {
 }
 
 describe('db', () => {
-  it('crée les 5 tables', () => {
+  it('crée les tables', () => {
     const db = tmpDb()
     const noms = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()
       .map((r: any) => r.name)
-    for (const t of ['templates', 'globals', 'logos', 'print_log', 'settings']) {
+    for (const t of ['templates', 'categories', 'globals', 'logos', 'print_log', 'settings']) {
       expect(noms).toContain(t)
     }
   })
@@ -36,7 +36,7 @@ describe('db', () => {
 
   it('une base neuve est marquée au dernier schéma', () => {
     const db = tmpDb()
-    expect(db.pragma('user_version', { simple: true })).toBe(2)
+    expect(db.pragma('user_version', { simple: true })).toBe(3)
     const t = db.prepare("SELECT categorie, position FROM templates LIMIT 0").columns()
     expect(t.map((c) => c.name)).toEqual(['categorie', 'position'])
     expect(() => db.prepare('SELECT position FROM logos LIMIT 0').columns()).not.toThrow()
@@ -73,7 +73,8 @@ describe('db', () => {
     expect(t.position).toBe(0)
     const l = db.prepare("SELECT * FROM logos WHERE nom = 'Vieux logo'").get() as any
     expect(l.position).toBe(0)
-    expect(db.pragma('user_version', { simple: true })).toBe(2)
+    expect(db.pragma('user_version', { simple: true })).toBe(3)
+    expect(() => db.prepare('SELECT id, nom, position FROM categories LIMIT 0').columns()).not.toThrow()
   })
 
   it('est idempotent (réouverture sans erreur)', () => {

@@ -8,27 +8,36 @@ const router = useRouter()
 const dialog = useDialog()
 const templates = ref<Template[]>([])
 
+interface Categorie { id: number; nom: string; position: number }
+const categories = ref<Categorie[]>([])
+
 async function charger() {
-  templates.value = await api.get<Template[]>('/api/templates')
+  ;[templates.value, categories.value] = await Promise.all([
+    api.get<Template[]>('/api/templates'),
+    api.get<Categorie[]>('/api/categories'),
+  ])
 }
 onMounted(charger)
 
 // --- sections par catégorie + glisser-déposer ---
 // ponytail: drag & drop HTML5 natif (usage bureau) — passer à sortablejs si
 // le tactile devient un besoin réel
-const categoriesVides = ref<string[]>([])
 const glisse = ref<Template | null>(null)
 
+// sans catégorie d'abord, puis l'ordre de la table categories (id = 0 : section
+// non gérable — sans catégorie ou catégorie orpheline absente de la table)
 const sections = computed(() => {
-  const m = new Map<string, Template[]>()
-  for (const c of categoriesVides.value) m.set(c, [])
+  const par = new Map<string, Template[]>()
   for (const t of templates.value) {
-    if (!m.has(t.categorie)) m.set(t.categorie, [])
-    m.get(t.categorie)!.push(t)
+    if (!par.has(t.categorie)) par.set(t.categorie, [])
+    par.get(t.categorie)!.push(t)
   }
-  return [...m.entries()]
-    .map(([categorie, liste]) => ({ categorie, liste }))
-    .sort((a, b) => a.categorie.localeCompare(b.categorie)) // '' (sans catégorie) en premier
+  const out: { categorie: string; id: number; liste: Template[] }[] = []
+  if (par.has('')) out.push({ categorie: '', id: 0, liste: par.get('')! })
+  for (const c of categories.value) out.push({ categorie: c.nom, id: c.id, liste: par.get(c.nom) ?? [] })
+  for (const [nom, liste] of par)
+    if (nom && !categories.value.some((c) => c.nom === nom)) out.push({ categorie: nom, id: 0, liste })
+  return out
 })
 
 // dépose sur une carte = insertion avant elle ; sur la section = à la fin
@@ -53,24 +62,50 @@ async function surDrop(cible: Template | null, categorie: string) {
   await charger()
 }
 
-// ordre des catégories : flèches ↑/↓, stocké dans le réglage ordre_categories
-async function deplacerCategorie(cat: string, delta: number) {
-  const noms = sections.value.map((s) => s.categorie).filter((c) => c !== '')
-  const i = noms.indexOf(cat)
+// ordre des catégories : flèches ↑/↓ sur les titres
+async function deplacerCategorie(id: number, delta: number) {
+  const ids = categories.value.map((c) => c.id)
+  const i = ids.indexOf(id)
   const j = i + delta
-  if (i < 0 || j < 0 || j >= noms.length) return
-  ;[noms[i], noms[j]] = [noms[j], noms[i]]
-  await api.put('/api/settings', { ordre_categories: JSON.stringify(noms) })
+  if (i < 0 || j < 0 || j >= ids.length) return
+  ;[ids[i], ids[j]] = [ids[j], ids[i]]
+  await api.post('/api/categories/ordre', { ids })
+  await charger()
+}
+
+const catRenommage = ref<{ id: number; categorie: string } | null>(null)
+const catNouveauNom = ref('')
+function ouvrirRenommageCat(s: { id: number; categorie: string }) {
+  catRenommage.value = s
+  catNouveauNom.value = s.categorie
+}
+async function validerRenommageCat() {
+  const c = catRenommage.value
+  const nom = catNouveauNom.value.trim()
+  catRenommage.value = null
+  if (!c || !nom || nom === c.categorie) return
+  await api.put(`/api/categories/${c.id}`, { nom })
+  await charger()
+}
+
+async function supprimerCategorie(s: { id: number; categorie: string }) {
+  const ok = window.confirm(
+    `Supprimer la catégorie « ${s.categorie} » ? Ses modèles passeront dans « Sans catégorie ».`
+  )
+  if (!ok) return
+  await api.del(`/api/categories/${s.id}`)
   await charger()
 }
 
 const modalCategorie = ref(false)
 const nomCategorie = ref('')
-function creerCategorie() {
+async function creerCategorie() {
   const nom = nomCategorie.value.trim()
-  if (nom && !sections.value.some((s) => s.categorie === nom)) categoriesVides.value.push(nom)
   modalCategorie.value = false
   nomCategorie.value = ''
+  if (!nom) return
+  await api.post('/api/categories', { nom })
+  await charger()
 }
 
 async function creer() {
@@ -121,9 +156,11 @@ function supprimer(t: Template) {
         @drop="surDrop(null, s.categorie)"
       >
         {{ s.categorie || 'Sans catégorie' }}
-        <span v-if="s.categorie" class="fleches">
-          <n-button size="tiny" quaternary :data-testid="`cat-monter-${s.categorie}`" title="Monter" @click="deplacerCategorie(s.categorie, -1)">↑</n-button>
-          <n-button size="tiny" quaternary :data-testid="`cat-descendre-${s.categorie}`" title="Descendre" @click="deplacerCategorie(s.categorie, 1)">↓</n-button>
+        <span v-if="s.id" class="fleches">
+          <n-button size="tiny" quaternary :data-testid="`cat-monter-${s.categorie}`" title="Monter" @click="deplacerCategorie(s.id, -1)">↑</n-button>
+          <n-button size="tiny" quaternary :data-testid="`cat-descendre-${s.categorie}`" title="Descendre" @click="deplacerCategorie(s.id, 1)">↓</n-button>
+          <n-button size="tiny" quaternary :data-testid="`cat-renommer-${s.categorie}`" @click="ouvrirRenommageCat(s)">Renommer</n-button>
+          <n-button size="tiny" quaternary type="error" :data-testid="`cat-supprimer-${s.categorie}`" @click="supprimerCategorie(s)">Supprimer</n-button>
         </span>
       </h2>
       <div class="grille" @dragover.prevent @drop.self="surDrop(null, s.categorie)">
@@ -164,6 +201,19 @@ function supprimer(t: Template) {
         <p class="note">La catégorie est conservée dès qu'un modèle y est déposé.</p>
         <template #footer>
           <n-button type="primary" data-testid="valider-categorie" @click="creerCategorie">Créer</n-button>
+        </template>
+      </n-card>
+    </n-modal>
+
+    <n-modal :show="!!catRenommage" @update:show="catRenommage = null">
+      <n-card title="Renommer la catégorie" style="max-width: 400px" closable @close="catRenommage = null">
+        <n-input
+          v-model:value="catNouveauNom"
+          data-testid="champ-renommage-categorie"
+          @keyup.enter="validerRenommageCat"
+        />
+        <template #footer>
+          <n-button type="primary" data-testid="valider-renommage-categorie" @click="validerRenommageCat">Renommer</n-button>
         </template>
       </n-card>
     </n-modal>

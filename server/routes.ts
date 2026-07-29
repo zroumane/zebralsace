@@ -56,6 +56,9 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     ['POST', /^\/logos/],
     ['PUT', /^\/logos/],
     ['DELETE', /^\/logos/],
+    ['POST', /^\/categories/],
+    ['PUT', /^\/categories/],
+    ['DELETE', /^\/categories/],
   ]
   api.use((req, res, next) => {
     if (!getSettings(db).admin_mdp) return next()
@@ -67,26 +70,25 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   // ---- templates ----
   const templateParId = db.prepare('SELECT * FROM templates WHERE id = ?')
 
+  // sans catégorie en tête, puis l'ordre des catégories (flèches de l'admin),
+  // catégories inconnues à la suite en alphabétique
   api.get('/templates', (_req, res) => {
-    const lignes = db
-      .prepare('SELECT * FROM templates ORDER BY position, nom COLLATE NOCASE')
-      .all() as any[]
-    // ordre des catégories choisi à l'admin (flèches) ; sans catégorie toujours
-    // en tête, catégories hors liste à la suite en alphabétique
-    let ordre: string[] = []
-    try {
-      ordre = JSON.parse(getSettings(db).ordre_categories ?? '[]')
-    } catch {}
-    const rang = (c: string) => (c === '' ? -1 : ordre.indexOf(c) === -1 ? ordre.length : ordre.indexOf(c))
-    lignes.sort(
-      (a, b) =>
-        rang(a.categorie) - rang(b.categorie) ||
-        a.categorie.localeCompare(b.categorie, 'fr', { sensitivity: 'base' }) ||
-        a.position - b.position ||
-        a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' })
+    res.json(
+      db
+        .prepare(
+          `SELECT t.* FROM templates t
+           LEFT JOIN categories c ON c.nom = t.categorie
+           ORDER BY CASE WHEN t.categorie = '' THEN -1 ELSE COALESCE(c.position, 1e9) END,
+                    t.categorie COLLATE NOCASE, t.position, t.nom COLLATE NOCASE`
+        )
+        .all()
     )
-    res.json(lignes)
   })
+
+  // toute catégorie posée sur un modèle existe dans la table (créée au besoin)
+  const upsertCategorie = db.prepare(
+    'INSERT OR IGNORE INTO categories (nom, position) VALUES (?, (SELECT COALESCE(MAX(position), -1) + 1 FROM categories))'
+  )
 
   api.post('/templates', (req, res) => {
     const nom = String(req.body?.nom ?? '').trim()
@@ -106,8 +108,53 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     const { categorie, ids } = req.body ?? {}
     if (typeof categorie !== 'string' || !Array.isArray(ids))
       return res.status(400).json({ erreur: 'categorie et ids requis' })
+    if (categorie) upsertCategorie.run(categorie)
     const maj = db.prepare('UPDATE templates SET categorie = ?, position = ? WHERE id = ?')
     db.transaction(() => ids.forEach((id, i) => maj.run(categorie, i, id)))()
+    res.json({ ok: true })
+  })
+
+  // ---- catégories ----
+  api.get('/categories', (_req, res) => {
+    res.json(db.prepare('SELECT * FROM categories ORDER BY position, nom COLLATE NOCASE').all())
+  })
+  api.post('/categories', (req, res) => {
+    const nom = String(req.body?.nom ?? '').trim()
+    if (!nom) return res.status(400).json({ erreur: 'Nom requis' })
+    upsertCategorie.run(nom)
+    res.status(201).json(db.prepare('SELECT * FROM categories WHERE nom = ?').get(nom))
+  })
+  api.post('/categories/ordre', (req, res) => {
+    const ids = req.body?.ids
+    if (!Array.isArray(ids)) return res.status(400).json({ erreur: 'ids requis' })
+    const maj = db.prepare('UPDATE categories SET position = ? WHERE id = ?')
+    db.transaction(() => ids.forEach((id, i) => maj.run(i, id)))()
+    res.json({ ok: true })
+  })
+  api.put('/categories/:id', (req, res) => {
+    const cat = db.prepare('SELECT * FROM categories WHERE id = ?').get(req.params.id) as any
+    if (!cat) return res.status(404).json({ erreur: 'Catégorie introuvable' })
+    const nom = String(req.body?.nom ?? '').trim()
+    if (!nom) return res.status(400).json({ erreur: 'Nom requis' })
+    if (nom !== cat.nom) {
+      if (db.prepare('SELECT 1 FROM categories WHERE nom = ?').get(nom))
+        return res.status(400).json({ erreur: 'Ce nom de catégorie existe déjà' })
+      db.transaction(() => {
+        db.prepare('UPDATE categories SET nom = ? WHERE id = ?').run(nom, cat.id)
+        db.prepare('UPDATE templates SET categorie = ? WHERE categorie = ?').run(nom, cat.nom)
+      })()
+    }
+    res.json(db.prepare('SELECT * FROM categories WHERE id = ?').get(cat.id))
+  })
+  api.delete('/categories/:id', (req, res) => {
+    const cat = db.prepare('SELECT * FROM categories WHERE id = ?').get(req.params.id) as any
+    if (cat) {
+      db.transaction(() => {
+        // les modèles de la catégorie supprimée retombent dans « Sans catégorie »
+        db.prepare("UPDATE templates SET categorie = '' WHERE categorie = ?").run(cat.nom)
+        db.prepare('DELETE FROM categories WHERE id = ?').run(cat.id)
+      })()
+    }
     res.json({ ok: true })
   })
 
@@ -124,6 +171,8 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     const maj = champs.filter((c) => req.body[c] !== undefined)
     if (maj.includes('nom') && !String(req.body.nom ?? '').trim())
       return res.status(400).json({ erreur: 'nom requis' })
+    if (maj.includes('categorie') && String(req.body.categorie ?? '').trim())
+      upsertCategorie.run(String(req.body.categorie).trim())
     for (const c of maj)
       db.prepare(`UPDATE templates SET ${c} = ? WHERE id = ?`).run(req.body[c], req.params.id)
     db.prepare("UPDATE templates SET updated_at = datetime('now','localtime') WHERE id = ?").run(req.params.id)

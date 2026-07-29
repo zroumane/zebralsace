@@ -46,6 +46,7 @@ test('flèches : remonter une catégorie change l’ordre des sections', async (
   await creer('Flèche B e2e', 'Flèche Beta e2e')
 
   await page.goto('/admin/modeles')
+  await expect(page.getByTestId('cat-monter-Flèche Beta e2e')).toBeVisible()
   await page.getByTestId('cat-monter-Flèche Beta e2e').click()
   await expect
     .poll(async () => {
@@ -53,4 +54,23 @@ test('flèches : remonter une catégorie change l’ordre des sections', async (
       return cats.indexOf('Flèche Beta e2e') < cats.indexOf('Flèche Alpha e2e')
     })
     .toBe(true)
+})
+
+test('renommer puis supprimer une catégorie (les modèles retombent sans catégorie)', async ({ page, request }) => {
+  const { id } = await (await request.post('/api/templates', { data: { nom: 'Cat vie e2e' } })).json()
+  await request.put(`/api/templates/${id}`, { data: { categorie: 'Cat éphémère e2e' } })
+
+  await page.goto('/admin/modeles')
+  await page.getByTestId('cat-renommer-Cat éphémère e2e').click()
+  await page.getByTestId('champ-renommage-categorie').locator('input').fill('Cat renommée e2e')
+  await page.getByTestId('valider-renommage-categorie').click()
+  await expect
+    .poll(async () => (await (await request.get(`/api/templates/${id}`)).json()).categorie)
+    .toBe('Cat renommée e2e')
+
+  page.once('dialog', (d) => void d.accept())
+  await page.getByTestId('cat-supprimer-Cat renommée e2e').click()
+  await expect
+    .poll(async () => (await (await request.get(`/api/templates/${id}`)).json()).categorie)
+    .toBe('')
 })
