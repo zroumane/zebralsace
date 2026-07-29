@@ -22,7 +22,8 @@ describe('templates', () => {
   it('CRUD complet', async () => {
     const { body: t } = await request(app).post('/api/templates').send({ nom: 'Quiche' }).expect(201)
     expect(t.nom).toBe('Quiche')
-    expect(t.largeur_mm).toBe(100)
+    expect(t.largeur_mm).toBe(85)
+    expect(t.hauteur_mm).toBe(55)
 
     await request(app)
       .put(`/api/templates/${t.id}`)

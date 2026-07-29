@@ -79,7 +79,8 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   api.post('/templates', (req, res) => {
     const nom = String(req.body?.nom ?? '').trim()
     if (!nom) return res.status(400).json({ erreur: 'nom requis' })
-    const r = db.prepare('INSERT INTO templates (nom) VALUES (?)').run(nom)
+    // taille par défaut explicite : vaut aussi pour les bases créées avant ce défaut
+    const r = db.prepare('INSERT INTO templates (nom, largeur_mm, hauteur_mm) VALUES (?, 85, 55)').run(nom)
     res.status(201).json(templateParId.get(r.lastInsertRowid))
   })
 
