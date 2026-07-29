@@ -113,10 +113,8 @@ async function surDrop(cible: Logo | null) {
   const liste = logos.value.filter((x) => x.id !== l.id)
   const idx = cible ? liste.findIndex((x) => x.id === cible.id) : liste.length
   liste.splice(idx < 0 ? liste.length : idx, 0, l)
-  logos.value = liste // affichage immédiat, sans attendre les PUT
-  await Promise.all(
-    liste.map((x, i) => (x.position !== i ? api.put(`/api/logos/${x.id}`, { position: i }) : Promise.resolve()))
-  )
+  logos.value = liste // affichage immédiat, sans attendre le serveur
+  await api.post('/api/logos/ordre', { ids: liste.map((x) => x.id) })
   await charger()
 }
 </script>

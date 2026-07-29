@@ -80,9 +80,24 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   api.post('/templates', (req, res) => {
     const nom = String(req.body?.nom ?? '').trim()
     if (!nom) return res.status(400).json({ erreur: 'nom requis' })
-    // taille par défaut explicite : vaut aussi pour les bases créées avant ce défaut
-    const r = db.prepare('INSERT INTO templates (nom, largeur_mm, hauteur_mm) VALUES (?, 85, 55)').run(nom)
+    // taille par défaut explicite : vaut aussi pour les bases créées avant ce défaut.
+    // position MIN-1 : un nouveau modèle prend la première place de sa section
+    const r = db
+      .prepare(
+        'INSERT INTO templates (nom, largeur_mm, hauteur_mm, position) VALUES (?, 85, 55, (SELECT COALESCE(MIN(position), 1) - 1 FROM templates))'
+      )
+      .run(nom)
     res.status(201).json(templateParId.get(r.lastInsertRowid))
+  })
+
+  // réordonnancement d'une section en un seul appel (transaction)
+  api.post('/templates/ordre', (req, res) => {
+    const { categorie, ids } = req.body ?? {}
+    if (typeof categorie !== 'string' || !Array.isArray(ids))
+      return res.status(400).json({ erreur: 'categorie et ids requis' })
+    const maj = db.prepare('UPDATE templates SET categorie = ?, position = ? WHERE id = ?')
+    db.transaction(() => ids.forEach((id, i) => maj.run(categorie, i, id)))()
+    res.json({ ok: true })
   })
 
   api.get('/templates/:id', (req, res) => {
@@ -165,7 +180,12 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     const { nom, type, png } = req.body ?? {}
     if (!nom || !['logo', 'code-barres'].includes(type) || !String(png).startsWith('data:image/png;base64,'))
       return res.status(400).json({ erreur: 'nom, type et png (dataURL) requis' })
-    const r = db.prepare("INSERT INTO logos (nom, type, chemin_fichier) VALUES (?, ?, '')").run(nom, type)
+    // position MIN-1 : un nouveau média prend la première place de la bibliothèque
+    const r = db
+      .prepare(
+        "INSERT INTO logos (nom, type, chemin_fichier, position) VALUES (?, ?, '', (SELECT COALESCE(MIN(position), 1) - 1 FROM logos))"
+      )
+      .run(nom, type)
     const fichier = `${r.lastInsertRowid}.png`
     fs.writeFileSync(
       path.join(dataDir, 'logos', fichier),
@@ -173,6 +193,14 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     )
     db.prepare('UPDATE logos SET chemin_fichier = ? WHERE id = ?').run(fichier, r.lastInsertRowid)
     res.status(201).json(db.prepare('SELECT * FROM logos WHERE id = ?').get(r.lastInsertRowid))
+  })
+  // réordonnancement de la bibliothèque en un seul appel (transaction)
+  api.post('/logos/ordre', (req, res) => {
+    const ids = req.body?.ids
+    if (!Array.isArray(ids)) return res.status(400).json({ erreur: 'ids requis' })
+    const maj = db.prepare('UPDATE logos SET position = ? WHERE id = ?')
+    db.transaction(() => ids.forEach((id, i) => maj.run(i, id)))()
+    res.json({ ok: true })
   })
   api.put('/logos/:id', (req, res) => {
     const logo = db.prepare('SELECT * FROM logos WHERE id = ?').get(req.params.id) as any

@@ -44,21 +44,11 @@ async function surDrop(cible: Template | null, categorie: string) {
   const idx = cible ? liste.findIndex((x) => x.id === cible.id) : liste.length
   liste.splice(idx < 0 ? liste.length : idx, 0, t)
 
-  await Promise.all(
-    liste.map((x, i) =>
-      x.id === t.id || x.categorie !== categorie || x.position !== i
-        ? api.put(`/api/templates/${x.id}`, { categorie, position: i })
-        : Promise.resolve()
-    )
-  )
+  await api.post('/api/templates/ordre', { categorie, ids: liste.map((x) => x.id) })
   // réindexe l'ancienne catégorie si le modèle en a changé
   if (ancienne !== categorie) {
     const restants = templates.value.filter((x) => x.categorie === ancienne && x.id !== t.id)
-    await Promise.all(
-      restants.map((x, i) =>
-        x.position !== i ? api.put(`/api/templates/${x.id}`, { position: i }) : Promise.resolve()
-      )
-    )
+    await api.post('/api/templates/ordre', { categorie: ancienne, ids: restants.map((x) => x.id) })
   }
   await charger()
 }
