@@ -775,20 +775,24 @@ async function enregistrer() {
 </template>
 
 <style scoped>
-.editeur { min-height: 100vh; display: flex; flex-direction: column; }
+/* hauteur verrouillée à la fenêtre : la page ne défile jamais,
+   seule la zone canvas défile (et se déplace au Ctrl+glisser) */
+.editeur { height: 100vh; display: flex; flex-direction: column; }
 header {
   display: flex; align-items: center; gap: 16px; padding: 10px 16px;
   border-bottom: 3px solid #c1121f; flex-wrap: wrap;
 }
 header label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .corps { flex: 1; display: flex; min-height: 0; }
-.outils { width: 200px; padding: 12px; border-right: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 8px; }
-.zone-canvas { flex: 1; overflow: auto; background: #f7f7f7; padding: 24px; }
+.outils { width: 200px; padding: 12px; border-right: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.zone-canvas { flex: 1; overflow: auto; background: #f7f7f7; padding: 24px; display: flex; }
+/* centre le canvas quand il est plus petit que la zone, reste défilable sinon */
+.zone-canvas :deep(.canvas-container) { margin: auto; }
 .zone-canvas.pan-en-cours { cursor: grabbing; user-select: none; }
 .zoom-ctrl { display: flex; align-items: center; gap: 4px; }
 .zoom-affiche { font-size: 13px; color: #555; min-width: 48px; text-align: center; }
 .zone-canvas canvas { box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15); }
-.props { width: 260px; padding: 12px; border-left: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 12px; }
+.props { width: 260px; padding: 12px; border-left: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .astuce { font-size: 12px; color: #999; margin: 0; }
 .libelle-couleur { font-size: 13px; font-weight: 700; }
 .form-tableau { display: flex; flex-direction: column; gap: 10px; }
