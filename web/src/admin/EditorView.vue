@@ -672,14 +672,15 @@ async function enregistrer() {
       <n-button type="primary" size="large" strong data-testid="enregistrer" @click="enregistrer">
         Enregistrer
       </n-button>
-      <n-input v-model:value="template.nom" data-testid="nom-template" style="max-width: 240px" />
-      <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="laize" size="small" /></label>
-      <label>Hauteur (mm) <n-input-number v-model:value="template.hauteur_mm" :min="10" :max="300" size="small" /></label>
+      <n-input v-model:value="template.nom" data-testid="nom-template" style="flex: 1; min-width: 220px; max-width: 420px" />
+      <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="laize" size="small" style="width: 90px" /></label>
+      <label>Hauteur (mm) <n-input-number v-model:value="template.hauteur_mm" :min="10" :max="300" size="small" style="width: 90px" /></label>
       <div class="zoom-ctrl" title="Ctrl + molette pour zoomer, Ctrl + glisser pour se déplacer">
         <n-button size="small" quaternary @click="changerZoom(1 / 1.25)">−</n-button>
         <span class="zoom-affiche" data-testid="zoom">{{ Math.round(zoom * 100) }} %</span>
         <n-button size="small" quaternary @click="changerZoom(1.25)">+</n-button>
       </div>
+      <n-button tertiary data-testid="apercu-jour" style="margin-left: auto" @click="apercuValeursDuJour">Aperçu</n-button>
     </header>
 
     <div class="corps">
@@ -693,8 +694,6 @@ async function enregistrer() {
         <n-button @click="ajouterCadre">+ Cadre</n-button>
         <n-button data-testid="ajouter-rectangle" @click="ajouterRectanglePlein">+ Rectangle</n-button>
         <n-button data-testid="ajouter-tableau" @click="ouvrirTableau">+ Tableau nutritionnel</n-button>
-        <n-button tertiary data-testid="apercu-jour" @click="apercuValeursDuJour">Aperçu</n-button>
-        <n-button tertiary data-testid="imprimer-test" @click="imprimerTest">Imprimer un test</n-button>
         <b>Médias</b>
         <LogoLibrary @pick="placerImage" />
       </div>
@@ -776,7 +775,7 @@ async function enregistrer() {
         </template>
 
         <b>Variables</b>
-        <label>DLC (jours) <n-input-number v-model:value="template.dlc_jours" :min="0" :max="365" size="small" /></label>
+        <label>DLC (jours) <n-input-number v-model:value="template.dlc_jours" :min="0" :max="365" size="small" style="width: 100px" /></label>
         <n-button
           v-for="v in ['{{date}}', '{{dlc}}', ...globales.map((g) => `{{${g.cle}}}`)]"
           :key="v"
@@ -818,6 +817,9 @@ async function enregistrer() {
     <n-modal :show="!!apercuJour" @update:show="apercuJour = null">
       <n-card title="Aperçu" style="max-width: 900px" closable @close="apercuJour = null">
         <img v-if="apercuJour" :src="apercuJour" alt="aperçu" style="width: 100%; border: 1px solid #e5e5e5" />
+        <template #action>
+          <n-button type="primary" data-testid="imprimer-test" @click="imprimerTest">Imprimer un test</n-button>
+        </template>
       </n-card>
     </n-modal>
   </div>

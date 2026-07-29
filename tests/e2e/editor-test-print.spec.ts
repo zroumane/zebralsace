@@ -10,6 +10,8 @@ test('impression de test depuis l’éditeur', async ({ page, request }) => {
 
   await page.goto(`/admin/templates/${id}`)
   await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
+  // le bouton d'impression de test vit dans le popup d'aperçu
+  await page.getByTestId('apercu-jour').click()
   await page.getByTestId('imprimer-test').click()
   await expect(page.getByText('Étiquette de test envoyée')).toBeVisible()
 
