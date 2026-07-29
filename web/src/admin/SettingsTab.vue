@@ -69,7 +69,11 @@ async function supprimerGlobale(g: Globale) {
           :options="[{ label: '203 dpi', value: '203' }, { label: '300 dpi', value: '300' }, { label: '600 dpi', value: '600' }]"
         />
       </label>
-      <p class="note">⚠ Changer la résolution après avoir créé des modèles impose de les réajuster dans l'éditeur.</p>
+      <p class="note">
+        ⚠ La résolution se choisit à l'installation, selon l'imprimante. La changer
+        ensuite impose de réajuster les modèles dans l'éditeur et de réimporter
+        les logos (optimisés à la résolution active au moment de l'import).
+      </p>
       <label>Laize — largeur max d'impression (mm) <n-input-number v-model:value="laize" :min="10" :max="300" /></label>
       <label>Contraste (0–30) <n-slider v-model:value="contraste" :min="0" :max="30" /></label>
       <label>Vitesse (2–12) <n-input-number v-model:value="vitesse" :min="2" :max="12" /></label>
