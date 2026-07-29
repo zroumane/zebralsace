@@ -53,6 +53,17 @@ async function surDrop(cible: Template | null, categorie: string) {
   await charger()
 }
 
+// ordre des catégories : flèches ↑/↓, stocké dans le réglage ordre_categories
+async function deplacerCategorie(cat: string, delta: number) {
+  const noms = sections.value.map((s) => s.categorie).filter((c) => c !== '')
+  const i = noms.indexOf(cat)
+  const j = i + delta
+  if (i < 0 || j < 0 || j >= noms.length) return
+  ;[noms[i], noms[j]] = [noms[j], noms[i]]
+  await api.put('/api/settings', { ordre_categories: JSON.stringify(noms) })
+  await charger()
+}
+
 const modalCategorie = ref(false)
 const nomCategorie = ref('')
 function creerCategorie() {
@@ -110,6 +121,10 @@ function supprimer(t: Template) {
         @drop="surDrop(null, s.categorie)"
       >
         {{ s.categorie || 'Sans catégorie' }}
+        <span v-if="s.categorie" class="fleches">
+          <n-button size="tiny" quaternary :data-testid="`cat-monter-${s.categorie}`" title="Monter" @click="deplacerCategorie(s.categorie, -1)">↑</n-button>
+          <n-button size="tiny" quaternary :data-testid="`cat-descendre-${s.categorie}`" title="Descendre" @click="deplacerCategorie(s.categorie, 1)">↓</n-button>
+        </span>
       </h2>
       <div class="grille" @dragover.prevent @drop.self="surDrop(null, s.categorie)">
         <div
@@ -174,7 +189,8 @@ function supprimer(t: Template) {
 <style scoped>
 .barre { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .aide { font-size: 12px; color: #999; }
-.categorie { margin: 18px 0 0; font-size: 16px; color: #780000; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+.categorie { margin: 18px 0 0; font-size: 16px; color: #780000; border-bottom: 1px solid #eee; padding-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+.fleches { display: flex; gap: 2px; }
 .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; padding: 12px 0 16px; min-height: 40px; }
 .carte {
   border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px;
@@ -190,5 +206,7 @@ function supprimer(t: Template) {
 .apercu img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .vide { color: #999; font-size: 13px; }
 small { color: #666; }
-.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+/* toujours sur une seule ligne */
+.actions { display: flex; flex-wrap: nowrap; gap: 6px; margin-top: 4px; }
+.actions :deep(.n-button) { padding: 0 10px; }
 </style>

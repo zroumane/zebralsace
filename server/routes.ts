@@ -68,13 +68,24 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   const templateParId = db.prepare('SELECT * FROM templates WHERE id = ?')
 
   api.get('/templates', (_req, res) => {
-    res.json(
-      db
-        .prepare(
-          'SELECT * FROM templates ORDER BY categorie COLLATE NOCASE, position, nom COLLATE NOCASE'
-        )
-        .all()
+    const lignes = db
+      .prepare('SELECT * FROM templates ORDER BY position, nom COLLATE NOCASE')
+      .all() as any[]
+    // ordre des catégories choisi à l'admin (flèches) ; sans catégorie toujours
+    // en tête, catégories hors liste à la suite en alphabétique
+    let ordre: string[] = []
+    try {
+      ordre = JSON.parse(getSettings(db).ordre_categories ?? '[]')
+    } catch {}
+    const rang = (c: string) => (c === '' ? -1 : ordre.indexOf(c) === -1 ? ordre.length : ordre.indexOf(c))
+    lignes.sort(
+      (a, b) =>
+        rang(a.categorie) - rang(b.categorie) ||
+        a.categorie.localeCompare(b.categorie, 'fr', { sensitivity: 'base' }) ||
+        a.position - b.position ||
+        a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' })
     )
+    res.json(lignes)
   })
 
   api.post('/templates', (req, res) => {

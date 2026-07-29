@@ -36,3 +36,21 @@ test('drag & drop dans l’admin : déposer un modèle dans une catégorie cré�
     .poll(async () => (await (await request.get(`/api/templates/${id}`)).json()).categorie)
     .toBe('Glissée e2e')
 })
+
+test('flèches : remonter une catégorie change l’ordre des sections', async ({ page, request }) => {
+  const creer = async (nom: string, categorie: string) => {
+    const { id } = await (await request.post('/api/templates', { data: { nom } })).json()
+    await request.put(`/api/templates/${id}`, { data: { categorie } })
+  }
+  await creer('Flèche A e2e', 'Flèche Alpha e2e')
+  await creer('Flèche B e2e', 'Flèche Beta e2e')
+
+  await page.goto('/admin/modeles')
+  await page.getByTestId('cat-monter-Flèche Beta e2e').click()
+  await expect
+    .poll(async () => {
+      const cats = (await (await request.get('/api/templates')).json()).map((t: any) => t.categorie)
+      return cats.indexOf('Flèche Beta e2e') < cats.indexOf('Flèche Alpha e2e')
+    })
+    .toBe(true)
+})
