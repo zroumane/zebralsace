@@ -1,0 +1,10 @@
+node_modules
+data
+sauvegardes
+web/dist
+.git
+.github
+.e2e-data
+test-results
+playwright-report
+deploy/cle-deploiement*

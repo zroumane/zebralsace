@@ -1,0 +1,8 @@
+services:
+  zebralsace:
+    image: ghcr.io/zroumane/zebralsace:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
