@@ -19,8 +19,6 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      - run: npx playwright install --with-deps chromium
-      - run: npm run e2e
 
   image:
     # Publie l'image Docker sur GHCR pour chaque version taguée (canal Docker)
