@@ -778,7 +778,7 @@ async function enregistrer() {
 
         <b>Variables</b>
         <n-button
-          v-for="v in ['{{date}}', '{{dlc}}', '{{date+7}}', ...globales.map((g) => `{{${g.cle}}}`)]"
+          v-for="v in ['{{date}}', '{{dlc}}', ...globales.map((g) => `{{${g.cle}}}`)]"
           :key="v"
           size="small"
           tertiary
