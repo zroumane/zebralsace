@@ -5,6 +5,7 @@ import { api } from '../api'
 import StatusBadge from '../kiosk/StatusBadge.vue'
 import TemplatesTab from './TemplatesTab.vue'
 import MediaTab from './MediaTab.vue'
+import VariablesTab from './VariablesTab.vue'
 import HistoryTab from './HistoryTab.vue'
 import ErrorsTab from './ErrorsTab.vue'
 import SettingsTab from './SettingsTab.vue'
@@ -53,6 +54,7 @@ async function connecter() {
     <n-tabs v-else-if="session" v-model:value="onglet" type="line">
       <n-tab-pane name="modeles" tab="Modèles"><TemplatesTab /></n-tab-pane>
       <n-tab-pane name="medias" tab="Médias"><MediaTab /></n-tab-pane>
+      <n-tab-pane name="variables" tab="Variables"><VariablesTab /></n-tab-pane>
       <n-tab-pane name="historique" tab="Historique"><HistoryTab /></n-tab-pane>
       <n-tab-pane name="erreurs" tab="Erreurs"><ErrorsTab /></n-tab-pane>
       <n-tab-pane name="reglages" tab="Réglages"><SettingsTab /></n-tab-pane>

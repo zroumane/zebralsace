@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useMessage } from 'naive-ui'
-import { api, type Globale, type PrinterStatus } from '../api'
+import { api, type PrinterStatus } from '../api'
 
 const message = useMessage()
 const reglages = ref<Record<string, string>>({})
@@ -44,29 +44,6 @@ async function tester() {
   s.pret ? message.success(s.message) : message.error(s.message)
 }
 
-const globales = ref<Globale[]>([])
-const nouvelleCle = ref('')
-const nouvelleValeur = ref('')
-async function chargerGlobales() {
-  globales.value = await api.get<Globale[]>('/api/globals')
-}
-onMounted(chargerGlobales)
-
-async function ajouterGlobale() {
-  const cle = nouvelleCle.value.trim().toLowerCase().replace(/\s+/g, '_')
-  if (!cle) return
-  await api.put(`/api/globals/${cle}`, { valeur: nouvelleValeur.value })
-  nouvelleCle.value = ''
-  nouvelleValeur.value = ''
-  await chargerGlobales()
-}
-async function majGlobale(g: Globale) {
-  await api.put(`/api/globals/${g.cle}`, { valeur: g.valeur })
-}
-async function supprimerGlobale(g: Globale) {
-  await api.del(`/api/globals/${g.cle}`)
-  await chargerGlobales()
-}
 </script>
 
 <template>
@@ -99,23 +76,6 @@ async function supprimerGlobale(g: Globale) {
     </section>
 
     <section>
-      <h2>Valeurs partagées</h2>
-      <!-- v-text obligatoire : des {{ }} littéraux dans le template seraient
-           interprétés comme des interpolations Vue -->
-      <p class="note">Utilisables dans tous les modèles avec <code v-text="'{{cle}}'" />.</p>
-      <div v-for="g in globales" :key="g.cle" class="globale">
-        <code v-text="'{{' + g.cle + '}}'" />
-        <n-input v-model:value="g.valeur" size="small" @blur="majGlobale(g)" />
-        <n-button size="tiny" quaternary type="error" @click="supprimerGlobale(g)">Supprimer</n-button>
-      </div>
-      <div class="globale">
-        <n-input v-model:value="nouvelleCle" size="small" placeholder="cle" data-testid="nouvelle-cle" />
-        <n-input v-model:value="nouvelleValeur" size="small" placeholder="valeur" data-testid="nouvelle-valeur" />
-        <n-button size="small" data-testid="ajouter-globale" @click="ajouterGlobale">Ajouter</n-button>
-      </div>
-    </section>
-
-    <section>
       <h2>Sécurité</h2>
       <label>
         Mot de passe admin
@@ -136,22 +96,7 @@ async function supprimerGlobale(g: Globale) {
       </n-button>
     </section>
 
-    <section>
-      <h2>Licence</h2>
-      <label>Licencié (client) <n-input v-model:value="reglages.licence_client" placeholder="Nom de la société" /></label>
-      <label>Référence contrat <n-input v-model:value="reglages.licence_ref" placeholder="ex. CT-2026-04" /></label>
-      <p class="note">
-        Affiché à titre de traçabilité — la licence d'utilisation est régie par
-        le contrat de prestation.
-      </p>
-    </section>
-
-    <p v-if="version" class="version">
-      Zebralsace v{{ version }}<template v-if="reglages.licence_client">
-        — licence : {{ reglages.licence_client
-        }}<template v-if="reglages.licence_ref"> ({{ reglages.licence_ref }})</template>
-      </template>
-    </p>
+    <p v-if="version" class="version">Zebralsace v{{ version }}</p>
   </div>
 </template>
 
@@ -162,6 +107,5 @@ h2 { font-size: 16px; color: #780000; margin: 0; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; }
 .note { font-size: 12px; color: #666; margin: 0; }
 .boutons { display: flex; gap: 8px; }
-.globale { display: flex; gap: 6px; align-items: center; }
 .version { width: 100%; color: #bbb; font-size: 12px; margin: 0; }
 </style>
