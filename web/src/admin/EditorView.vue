@@ -122,7 +122,7 @@ async function restaurer(etat: string) {
   const c = canvas.value!
   await c.loadFromJSON(JSON.parse(etat))
   c.backgroundColor = '#ffffff'
-  c.getObjects().forEach(protegerTexte)
+  c.getObjects().forEach(protegerObjet)
   dessinerGrille()
   selection.value = null
   c.renderAll()
@@ -181,12 +181,22 @@ function dessinerGrille() {
   }
 }
 
-// Le texte ne doit jamais être déformé : pas de poignées d'angle sur les blocs
-// texte. La largeur se règle par les poignées latérales (le texte se reformate)
-// et la taille des caractères par le champ Taille du panneau.
-function protegerTexte(o: any) {
+// Seuls les rectangles se redimensionnent librement (uniformScaling: false).
+// Tout le reste est verrouillé :
+// - texte : jamais étiré — il ne dépend que de son contenu et de sa taille de
+//   police ; les poignées latérales ne font que reformater la largeur ;
+// - images, tableaux… : ratio conservé (angles seuls, scaleY asservi à scaleX
+//   par l'écouteur object:scaling).
+function estLibre(o: any) {
+  return String(o.type).toLowerCase() === 'rect'
+}
+function protegerObjet(o: any) {
+  if (o.estGrille || estLibre(o)) return
   if (o.text !== undefined) {
     o.setControlsVisibility({ tl: false, tr: false, bl: false, br: false })
+  } else {
+    o.setControlsVisibility({ ml: false, mr: false, mt: false, mb: false })
+    o.lockScalingFlip = true
   }
 }
 
@@ -200,7 +210,7 @@ function ajouterTexte() {
     fontSize: mmToPx(3, dpi.value),
     fill: '#000000',
   })
-  protegerTexte(t)
+  protegerObjet(t)
   c.add(t)
   c.setActiveObject(t)
   c.renderAll()
@@ -301,11 +311,16 @@ onMounted(async () => {
   await c.loadFromJSON(JSON.parse(template.value.doc_json))
   // loadFromJSON réinitialise backgroundColor à undefined (voir render.ts) : on la réapplique.
   c.backgroundColor = '#ffffff'
-  c.getObjects().forEach(protegerTexte)
+  c.getObjects().forEach(protegerObjet)
   appliquerDimensions()
   dessinerGrille()
 
   const pas1 = mmToPx(1, dpi.value)
+  c.on('object:scaling', (e: any) => {
+    const o = e.target
+    if (!o || o.text !== undefined || estLibre(o)) return
+    o.scaleY = o.scaleX // ratio verrouillé pour tout sauf les rectangles
+  })
   c.on('object:moving', (e) => {
     const o = e.target!
     o.set({ left: Math.round(o.left! / pas1) * pas1, top: Math.round(o.top! / pas1) * pas1 })
