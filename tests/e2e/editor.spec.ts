@@ -15,6 +15,19 @@ test('éditeur : chargement, renommage, sauvegarde avec vignette', async ({ page
   expect(t.vignette_png).toMatch(/^data:image\/png/)
 })
 
+test('rectangle plein à bords arrondis : ajouté et persisté', async ({ page, request }) => {
+  const { id } = await (await request.post('/api/templates', { data: { nom: 'Rect e2e' } })).json()
+
+  await page.goto(`/admin/templates/${id}`)
+  await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
+  await page.getByTestId('ajouter-rectangle').click()
+  await page.getByTestId('enregistrer').click()
+  await expect(page.getByText('Modèle enregistré')).toBeVisible()
+
+  const t = await (await request.get(`/api/templates/${id}`)).json()
+  expect(t.doc_json).toContain('"rx"') // bords arrondis sérialisés
+})
+
 test('nouveau modèle jamais enregistré : quitter le supprime (après confirmation)', async ({ page, request }) => {
   await page.goto('/admin/modeles')
   await page.getByTestId('nouveau-modele').click()

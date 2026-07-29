@@ -272,6 +272,8 @@ function ajouterCadre() {
       fill: 'transparent',
       stroke: '#000000',
       strokeWidth: 3,
+      rx: mmToPx(1.5, dpi.value),
+      ry: mmToPx(1.5, dpi.value),
     })
   )
   c.renderAll()
@@ -287,6 +289,44 @@ function ajouterTrait() {
   })
   c.add(l)
   c.renderAll()
+}
+
+// rectangle plein à bords arrondis (cartouche — typiquement noir sous texte blanc)
+function ajouterRectanglePlein() {
+  const c = canvas.value!
+  const r = new Rect({
+    left: mmToPx(5, dpi.value),
+    top: mmToPx(5, dpi.value),
+    width: mmToPx(30, dpi.value),
+    height: mmToPx(10, dpi.value),
+    fill: '#000000',
+    rx: mmToPx(2, dpi.value),
+    ry: mmToPx(2, dpi.value),
+  })
+  c.add(r)
+  c.setActiveObject(r)
+  c.renderAll()
+}
+
+// couleur du texte : portion sélectionnée en édition, sinon tout le bloc
+function appliquerCouleurTexte(couleur: string) {
+  const o: any = selection.value
+  if (!o) return
+  if (o.isEditing && o.selectionStart !== o.selectionEnd) {
+    o.setSelectionStyles({ fill: couleur })
+  } else {
+    o.set('fill', couleur)
+  }
+  canvas.value!.requestRenderAll()
+}
+
+// couleur d'une forme : le fond s'il est plein, le trait s'il existe
+function appliquerCouleurForme(couleur: string) {
+  const o: any = selection.value
+  if (!o) return
+  if (o.fill && o.fill !== 'transparent') o.set('fill', couleur)
+  if (o.stroke) o.set('stroke', couleur)
+  canvas.value!.requestRenderAll()
 }
 
 const apercuJour = ref<string | null>(null)
@@ -356,6 +396,7 @@ async function enregistrer() {
         <!-- boutons d'ajout : tasks 13, 14, 15 -->
         <n-button data-testid="ajouter-texte" @click="ajouterTexte">+ Texte</n-button>
         <n-button @click="ajouterCadre">+ Cadre</n-button>
+        <n-button data-testid="ajouter-rectangle" @click="ajouterRectanglePlein">+ Rectangle</n-button>
         <n-button @click="ajouterTrait">+ Trait</n-button>
         <n-button tertiary data-testid="apercu-jour" @click="apercuValeursDuJour">Aperçu valeurs du jour</n-button>
         <n-button tertiary data-testid="imprimer-test" @click="imprimerTest">Imprimer un test</n-button>
@@ -387,9 +428,36 @@ async function enregistrer() {
             <n-button @click="basculerStyle('fontStyle', 'italic', 'normal')"><i>I</i></n-button>
             <n-button @click="basculerStyle('underline', true, false)"><u>S</u></n-button>
           </div>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <span class="libelle-couleur">Couleur</span>
+            <n-button size="small" @click="appliquerCouleurTexte('#000000')">
+              <span class="pastille noire" /> Noir
+            </n-button>
+            <n-button size="small" @click="appliquerCouleurTexte('#ffffff')">
+              <span class="pastille blanche" /> Blanc
+            </n-button>
+          </div>
           <p class="astuce">
-            Double-cliquez dans le bloc puis sélectionnez une portion : G, I et S
-            ne s'appliquent qu'à elle. Sans sélection, tout le bloc est mis en forme.
+            Double-cliquez dans le bloc puis sélectionnez une portion : G, I, S et
+            la couleur ne s'appliquent qu'à elle. Sans sélection, tout le bloc est
+            mis en forme.
+          </p>
+        </template>
+
+        <template v-else-if="selection && String(selection.type).toLowerCase() !== 'image'">
+          <b>Forme</b>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <span class="libelle-couleur">Couleur</span>
+            <n-button size="small" @click="appliquerCouleurForme('#000000')">
+              <span class="pastille noire" /> Noir
+            </n-button>
+            <n-button size="small" @click="appliquerCouleurForme('#ffffff')">
+              <span class="pastille blanche" /> Blanc
+            </n-button>
+          </div>
+          <p class="astuce">
+            Une forme blanche est invisible sur le fond blanc de l'étiquette —
+            utile posée sur un rectangle noir (texte ou détourage en blanc).
           </p>
         </template>
 
@@ -427,4 +495,8 @@ header label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .zone-canvas canvas { box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15); }
 .props { width: 260px; padding: 12px; border-left: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 12px; }
 .astuce { font-size: 12px; color: #999; margin: 0; }
+.libelle-couleur { font-size: 13px; font-weight: 700; }
+.pastille { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 6px; }
+.pastille.noire { background: #000; }
+.pastille.blanche { background: #fff; border: 1px solid #ccc; }
 </style>
