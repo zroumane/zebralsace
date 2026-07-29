@@ -271,9 +271,11 @@ const taille = ref(24)
 const alignement = ref('left')
 const couleurTexte = ref('#000000')
 const couleurForme = ref('#000000')
-const bordsArrondis = ref(true)
 const rempli = ref(true)
-const epaisseur = ref(1) // bordure en mm (mode contour)
+// niveaux 1..10, par pas de 0,5 mm — arrondi 1 = coins carrés, bordure 1 = 0,5 mm
+const arrondi = ref(5)
+const bordure = ref(2)
+const niveau = (n: number) => Math.min(10, Math.max(1, n))
 watch(selection, (s: any) => {
   if (s?.text !== undefined) {
     police.value = s.fontFamily
@@ -283,9 +285,9 @@ watch(selection, (s: any) => {
   } else if (s) {
     couleurForme.value = s.fill && s.fill !== 'transparent' ? s.fill : s.stroke
     if (s.rx !== undefined) {
-      bordsArrondis.value = s.rx > 0
       rempli.value = !!(s.fill && s.fill !== 'transparent')
-      if (s.strokeWidth) epaisseur.value = Math.round((s.strokeWidth / mmToPx(1, dpi.value)) * 4) / 4
+      arrondi.value = niveau(Math.round(s.rx / mmToPx(0.5, dpi.value)) + 1)
+      if (s.strokeWidth) bordure.value = niveau(Math.round(s.strokeWidth / mmToPx(0.5, dpi.value)))
     }
   }
 })
@@ -506,15 +508,13 @@ function appliquerCouleurTexte(couleur: string) {
   canvas.value!.requestRenderAll()
 }
 
-// bords d'un rectangle : arrondis (2 mm) ou carrés (0) — carrés + rectangle
-// plat = un trait / une barre
-function appliquerBords(rayonMm: number) {
+// arrondi des coins par niveau (1 = carré) — carré + rectangle plat = un trait
+function appliquerBords(n: number | null) {
   const o: any = selection.value
-  if (!o || o.rx === undefined) return
-  const r = mmToPx(rayonMm, dpi.value)
+  if (!o || o.rx === undefined || !n) return
+  const r = mmToPx((n - 1) * 0.5, dpi.value)
   o.set({ rx: r, ry: r })
   o.dirty = true
-  bordsArrondis.value = rayonMm > 0
   canvas.value!.requestRenderAll()
 }
 
@@ -524,16 +524,16 @@ function appliquerRempli(v: boolean) {
   if (!o || o.rx === undefined) return
   const couleur = couleurForme.value || '#000000'
   if (v) o.set({ fill: couleur, stroke: null })
-  else o.set({ fill: 'transparent', stroke: couleur, strokeWidth: mmToPx(epaisseur.value, dpi.value) })
+  else o.set({ fill: 'transparent', stroke: couleur, strokeWidth: mmToPx(bordure.value * 0.5, dpi.value) })
   rempli.value = v
   o.dirty = true
   canvas.value!.requestRenderAll()
 }
 
-function appliquerEpaisseur(mm: number | null) {
+function appliquerEpaisseur(n: number | null) {
   const o: any = selection.value
-  if (!o || o.rx === undefined || !mm) return
-  o.set('strokeWidth', mmToPx(mm, dpi.value))
+  if (!o || o.rx === undefined || !n) return
+  o.set('strokeWidth', mmToPx(n * 0.5, dpi.value))
   o.dirty = true
   canvas.value!.requestRenderAll()
 }
@@ -838,22 +838,26 @@ async function enregistrer() {
           <div v-if="selection.rx !== undefined && !rempli" style="display: flex; gap: 8px; align-items: center">
             <span class="libelle-couleur">Bordure</span>
             <n-input-number
-              v-model:value="epaisseur"
+              v-model:value="bordure"
               size="small"
-              :min="0.25"
-              :max="5"
-              :step="0.25"
-              style="width: 120px"
-              data-testid="epaisseur-bordure"
+              :min="1"
+              :max="10"
+              style="width: 110px"
+              data-testid="niveau-bordure"
               @update:value="appliquerEpaisseur"
-            >
-              <template #suffix>mm</template>
-            </n-input-number>
+            />
           </div>
           <div v-if="selection.rx !== undefined" style="display: flex; gap: 8px; align-items: center">
-            <span class="libelle-couleur">Bords</span>
-            <n-button size="small" :type="bordsArrondis ? 'primary' : 'default'" @click="appliquerBords(2)">Arrondis</n-button>
-            <n-button size="small" data-testid="bords-carres" :type="!bordsArrondis ? 'primary' : 'default'" @click="appliquerBords(0)">Carrés</n-button>
+            <span class="libelle-couleur">Arrondi</span>
+            <n-input-number
+              v-model:value="arrondi"
+              size="small"
+              :min="1"
+              :max="10"
+              style="width: 110px"
+              data-testid="niveau-arrondi"
+              @update:value="appliquerBords"
+            />
           </div>
           <p class="astuce">
             Une forme blanche est invisible sur le fond blanc de l'étiquette —
