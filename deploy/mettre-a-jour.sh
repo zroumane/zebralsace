@@ -25,7 +25,16 @@ esac
 
 export GIT_SSH_COMMAND="ssh -i $CLE -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 echo "Récupération de la dernière version…"
-git pull --ff-only
+git fetch --tags --force origin
+# Les machines clientes suivent la dernière version TAGUÉE (validée par la CI),
+# pas la branche main. Sans aucun tag, repli sur main.
+TAG=$(git tag --sort=-v:refname | head -1)
+if [ -n "$TAG" ]; then
+  echo "Passage à la version $TAG"
+  git checkout -q "$TAG"
+else
+  git pull --ff-only
+fi
 npm ci
 npm run build
 

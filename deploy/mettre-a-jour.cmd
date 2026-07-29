@@ -18,7 +18,16 @@ if not exist deploy\cle-deploiement (
 
 set GIT_SSH_COMMAND=ssh -i deploy/cle-deploiement -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new
 echo Recuperation de la derniere version...
-git pull --ff-only || exit /b 1
+git fetch --tags --force origin || exit /b 1
+rem Les machines clientes suivent la derniere version TAGUEE ; sans tag, repli sur main.
+set TAG=
+for /f "delims=" %%t in ('git tag --sort=-v:refname') do if not defined TAG set TAG=%%t
+if defined TAG (
+  echo Passage a la version %TAG%
+  git checkout -q %TAG% || exit /b 1
+) else (
+  git pull --ff-only || exit /b 1
+)
 call npm ci || exit /b 1
 call npm run build || exit /b 1
 
