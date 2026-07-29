@@ -32,7 +32,7 @@ export interface Template {
   vignette_png: string | null
 }
 export interface Globale { cle: string; valeur: string }
-export interface Logo { id: number; nom: string; type: 'logo' | 'code-barres'; chemin_fichier: string }
+export interface Logo { id: number; nom: string; type: 'logo' | 'code-barres'; chemin_fichier: string; position: number }
 export interface JobFile {
   id: number
   template_nom: string

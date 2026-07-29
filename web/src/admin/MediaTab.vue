@@ -93,6 +93,23 @@ async function supprimer(l: Logo) {
   await api.del(`/api/logos/${l.id}`)
   await charger()
 }
+
+// --- ordre de la bibliothèque : glisser-déposer, comme les modèles ---
+const glisse = ref<Logo | null>(null)
+// dépose sur une vignette = insertion avant elle ; sur la grille = à la fin
+async function surDrop(cible: Logo | null) {
+  const l = glisse.value
+  glisse.value = null
+  if (!l || (cible && cible.id === l.id)) return
+  const liste = logos.value.filter((x) => x.id !== l.id)
+  const idx = cible ? liste.findIndex((x) => x.id === cible.id) : liste.length
+  liste.splice(idx < 0 ? liste.length : idx, 0, l)
+  logos.value = liste // affichage immédiat, sans attendre les PUT
+  await Promise.all(
+    liste.map((x, i) => (x.position !== i ? api.put(`/api/logos/${x.id}`, { position: i }) : Promise.resolve()))
+  )
+  await charger()
+}
 </script>
 
 <template>
@@ -129,13 +146,23 @@ async function supprimer(l: Logo) {
     <section class="biblio">
       <h2>Bibliothèque</h2>
       <p class="note">Disponible dans l'éditeur de tous les modèles.</p>
-      <div class="vignettes">
-        <figure v-for="l in logos" :key="l.id" :data-testid="`media-${l.id}`">
+      <div class="vignettes" @dragover.prevent @drop="surDrop(null)">
+        <figure
+          v-for="l in logos"
+          :key="l.id"
+          :data-testid="`media-${l.id}`"
+          draggable="true"
+          @dragstart="glisse = l"
+          @dragover.prevent
+          @drop.stop="surDrop(l)"
+        >
           <img :src="`/logos/${l.chemin_fichier}`" :alt="l.nom" />
           <figcaption>
-            <b>{{ l.nom }}</b><em v-if="l.type === 'code-barres'"> (code-barres)</em>
-            <n-button size="tiny" quaternary :data-testid="`renommer-${l.id}`" @click="renommer(l)">Renommer</n-button>
-            <n-button size="tiny" quaternary type="error" @click="supprimer(l)">Supprimer</n-button>
+            <b class="nom-media">{{ l.nom }}</b>
+            <span class="actions">
+              <n-button size="tiny" quaternary :data-testid="`renommer-${l.id}`" @click="renommer(l)">Renommer</n-button>
+              <n-button size="tiny" quaternary type="error" @click="supprimer(l)">Supprimer</n-button>
+            </span>
           </figcaption>
         </figure>
         <p v-if="!logos.length" class="note">
@@ -154,8 +181,14 @@ h2 { font-size: 16px; color: #780000; margin: 0; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; }
 .note { font-size: 12px; color: #666; margin: 0; }
 .encours { display: flex; align-items: center; gap: 8px; color: #9a5b00; }
-.vignettes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-figure { margin: 0; border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px; }
+/* seule la bibliothèque défile, pas la page */
+.vignettes {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;
+  overflow-y: auto; max-height: calc(100vh - 260px); padding-right: 4px;
+}
+figure { margin: 0; border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px; cursor: grab; }
 figure img { max-width: 100%; max-height: 90px; object-fit: contain; background: #fff; display: block; margin: 0 auto; }
-figcaption { font-size: 13px; color: #444; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+figcaption { font-size: 13px; color: #444; display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.nom-media { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.actions { display: flex; gap: 6px; }
 </style>

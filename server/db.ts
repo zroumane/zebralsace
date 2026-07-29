@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS logos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   nom TEXT NOT NULL,
   type TEXT NOT NULL DEFAULT 'logo' CHECK (type IN ('logo', 'code-barres')),
-  chemin_fichier TEXT NOT NULL
+  chemin_fichier TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS print_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,6 +63,8 @@ const MIGRATIONS: string[] = [
   // v1 : catégories et ordre d'affichage des modèles au kiosque
   `ALTER TABLE templates ADD COLUMN categorie TEXT NOT NULL DEFAULT '';
    ALTER TABLE templates ADD COLUMN position INTEGER NOT NULL DEFAULT 0;`,
+  // v2 : ordre d'affichage des médias
+  `ALTER TABLE logos ADD COLUMN position INTEGER NOT NULL DEFAULT 0;`,
 ]
 
 export function initDb(dataDir: string): Database.Database {

@@ -159,7 +159,7 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
 
   // ---- logos ----
   api.get('/logos', (_req, res) => {
-    res.json(db.prepare('SELECT * FROM logos ORDER BY nom COLLATE NOCASE').all())
+    res.json(db.prepare('SELECT * FROM logos ORDER BY position, nom COLLATE NOCASE').all())
   })
   api.post('/logos', (req, res) => {
     const { nom, type, png } = req.body ?? {}
@@ -175,10 +175,12 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     res.status(201).json(db.prepare('SELECT * FROM logos WHERE id = ?').get(r.lastInsertRowid))
   })
   api.put('/logos/:id', (req, res) => {
-    const nom = String(req.body?.nom ?? '').trim()
+    const logo = db.prepare('SELECT * FROM logos WHERE id = ?').get(req.params.id) as any
+    if (!logo) return res.status(404).json({ erreur: 'Média introuvable' })
+    const nom = req.body?.nom === undefined ? logo.nom : String(req.body.nom).trim()
     if (!nom) return res.status(400).json({ erreur: 'Nom requis' })
-    const r = db.prepare('UPDATE logos SET nom = ? WHERE id = ?').run(nom, req.params.id)
-    if (!r.changes) return res.status(404).json({ erreur: 'Média introuvable' })
+    const position = Number.isInteger(req.body?.position) ? req.body.position : logo.position
+    db.prepare('UPDATE logos SET nom = ?, position = ? WHERE id = ?').run(nom, position, req.params.id)
     res.json(db.prepare('SELECT * FROM logos WHERE id = ?').get(req.params.id))
   })
   api.delete('/logos/:id', (req, res) => {

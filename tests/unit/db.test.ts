@@ -36,9 +36,10 @@ describe('db', () => {
 
   it('une base neuve est marquée au dernier schéma', () => {
     const db = tmpDb()
-    expect(db.pragma('user_version', { simple: true })).toBe(1)
+    expect(db.pragma('user_version', { simple: true })).toBe(2)
     const t = db.prepare("SELECT categorie, position FROM templates LIMIT 0").columns()
     expect(t.map((c) => c.name)).toEqual(['categorie', 'position'])
+    expect(() => db.prepare('SELECT position FROM logos LIMIT 0').columns()).not.toThrow()
   })
 
   it('migre une base ancienne (colonnes categorie/position ajoutées)', () => {
@@ -56,13 +57,23 @@ describe('db', () => {
       updated_at TEXT
     )`)
     vieille.prepare("INSERT INTO templates (nom) VALUES ('Ancien')").run()
+    // les vraies bases anciennes ont toutes une table logos (sans position)
+    vieille.exec(`CREATE TABLE logos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nom TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'logo',
+      chemin_fichier TEXT NOT NULL
+    )`)
+    vieille.prepare("INSERT INTO logos (nom, chemin_fichier) VALUES ('Vieux logo', '1.png')").run()
     vieille.close()
 
     const db = initDb(dir)
     const t = db.prepare("SELECT * FROM templates WHERE nom = 'Ancien'").get() as any
     expect(t.categorie).toBe('')
     expect(t.position).toBe(0)
-    expect(db.pragma('user_version', { simple: true })).toBe(1)
+    const l = db.prepare("SELECT * FROM logos WHERE nom = 'Vieux logo'").get() as any
+    expect(l.position).toBe(0)
+    expect(db.pragma('user_version', { simple: true })).toBe(2)
   })
 
   it('est idempotent (réouverture sans erreur)', () => {
