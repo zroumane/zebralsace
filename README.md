@@ -101,11 +101,27 @@ npm run start        # sert l'application sur :3000 (PORT et DATA_DIR surchargea
 ### Mises à jour
 
 `bash deploy/mettre-a-jour.sh` (Linux) ou `deploy\mettre-a-jour.cmd`
-(Windows) : récupère la dernière version depuis GitHub, réinstalle, rebuild
-et redémarre le service. Au premier lancement, le script génère une **clé de
+(Windows) : récupère la **dernière version taguée** (validée par la CI — la
+production ne suit jamais `main` directement), réinstalle, rebuild et
+redémarre le service. Au premier lancement, le script génère une **clé de
 déploiement** dédiée (`deploy/cle-deploiement`, gitignorée) et affiche la clé
 publique à ajouter dans GitHub → Settings → Deploy keys (lecture seule) —
 la machine de production n'a ainsi jamais besoin de vos identifiants.
+La version installée s'affiche en bas de l'onglet Réglages.
+
+### Sauvegardes
+
+`bash deploy/sauvegarde.sh [dossier]` : copie cohérente de la base (API de
+sauvegarde SQLite, sûre même en cours d'écriture) + logos, rétention des
+30 dernières. À planifier, par ex. `0 3 * * *` en cron.
+
+### Sécurité
+
+Un **mot de passe administrateur** optionnel se définit dans Réglages →
+Sécurité : les modifications (modèles, réglages, valeurs partagées, images)
+demandent alors une connexion ; le kiosque et l'impression restent libres.
+Stocké haché (scrypt), jamais en clair. Pour une exposition au-delà du LAN,
+placez l'application derrière un reverse proxy HTTPS (Caddy, nginx…).
 - Côté postes : un simple site web, utilisable dans n'importe quel
   navigateur (installable en PWA plein écran).
 
