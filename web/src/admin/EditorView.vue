@@ -336,6 +336,9 @@ async function enregistrer() {
   <div v-if="template" class="editeur">
     <header>
       <BoutonRetour to="/admin/modeles" libelle="Retour" />
+      <n-button type="primary" size="large" strong data-testid="enregistrer" @click="enregistrer">
+        Enregistrer
+      </n-button>
       <n-input v-model:value="template.nom" data-testid="nom-template" style="max-width: 240px" />
       <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="laize" size="small" /></label>
       <label>Hauteur (mm) <n-input-number v-model:value="template.hauteur_mm" :min="10" :max="300" size="small" /></label>
@@ -346,7 +349,6 @@ async function enregistrer() {
         style="width: 100px"
         :options="[0.5, 1, 1.5, 2].map((v) => ({ label: `${v * 100} %`, value: v }))"
       />
-      <n-button type="primary" data-testid="enregistrer" @click="enregistrer">Enregistrer</n-button>
     </header>
 
     <div class="corps">
