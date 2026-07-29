@@ -30,41 +30,75 @@ async function supprimer(g: Globale) {
 
 <template>
   <div class="variables">
-    <section>
-      <h2>Valeurs partagées</h2>
-      <!-- v-text obligatoire : des {{ }} littéraux dans le template seraient
-           interprétés comme des interpolations Vue -->
-      <p class="note">
-        Définies une fois, utilisables dans tous les modèles avec
-        <code v-text="'{{cle}}'" /> — une modification les met à jour partout.
-      </p>
-      <div v-for="g in globales" :key="g.cle" class="globale">
-        <code v-text="'{{' + g.cle + '}}'" />
-        <n-input v-model:value="g.valeur" size="small" @blur="maj(g)" />
-        <n-button size="tiny" quaternary type="error" @click="supprimer(g)">Supprimer</n-button>
-      </div>
-      <div class="globale">
-        <n-input v-model:value="nouvelleCle" size="small" placeholder="cle" data-testid="nouvelle-cle" />
-        <n-input v-model:value="nouvelleValeur" size="small" placeholder="valeur" data-testid="nouvelle-valeur" />
-        <n-button size="small" data-testid="ajouter-globale" @click="ajouter">Ajouter</n-button>
-      </div>
-    </section>
+    <h2>Valeurs partagées</h2>
+    <!-- v-text obligatoire : des {{ }} littéraux dans le template seraient
+         interprétés comme des interpolations Vue -->
+    <p class="note">
+      Définies une fois, utilisables dans tous les modèles avec
+      <code v-text="'{{cle}}'" /> — une modification les met à jour partout.
+    </p>
 
-    <section>
-      <h2>Variables de date (intégrées)</h2>
-      <p class="note">Calculées automatiquement à chaque impression, format JJ/MM/AAAA.</p>
-      <div class="globale"><code v-text="'{{date}}'" /><span>date du jour (modifiable au kiosque)</span></div>
-      <div class="globale"><code v-text="'{{dlc}}'" /><span>date + durée DLC du modèle</span></div>
-      <div class="globale"><code v-text="'{{date+N}}'" /><span>date du jour + N jours</span></div>
-    </section>
+    <table>
+      <thead>
+        <tr>
+          <th class="col-variable">Variable</th>
+          <th>Valeur</th>
+          <th class="col-action"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="g in globales" :key="g.cle">
+          <td><code v-text="'{{' + g.cle + '}}'" /></td>
+          <td><n-input v-model:value="g.valeur" @blur="maj(g)" /></td>
+          <td>
+            <n-button size="small" quaternary type="error" @click="supprimer(g)">Supprimer</n-button>
+          </td>
+        </tr>
+        <tr class="ajout">
+          <td>
+            <n-input v-model:value="nouvelleCle" placeholder="cle" data-testid="nouvelle-cle" @keyup.enter="ajouter" />
+          </td>
+          <td>
+            <n-input v-model:value="nouvelleValeur" placeholder="valeur" data-testid="nouvelle-valeur" @keyup.enter="ajouter" />
+          </td>
+          <td>
+            <n-button size="small" type="primary" data-testid="ajouter-globale" @click="ajouter">Ajouter</n-button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Variables de date (intégrées)</h2>
+    <p class="note">Calculées automatiquement à chaque impression, format JJ/MM/AAAA.</p>
+    <table>
+      <tbody>
+        <tr>
+          <td class="col-variable"><code v-text="'{{date}}'" /></td>
+          <td>Date du jour (modifiable au kiosque au moment d'imprimer)</td>
+        </tr>
+        <tr>
+          <td class="col-variable"><code v-text="'{{dlc}}'" /></td>
+          <td>Date du jour + durée DLC définie sur le modèle</td>
+        </tr>
+        <tr>
+          <td class="col-variable"><code v-text="'{{date+N}}'" /></td>
+          <td>Date du jour + N jours</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
 <style scoped>
-.variables { display: flex; flex-wrap: wrap; gap: 48px; padding: 16px 0; align-items: flex-start; }
-section { width: 400px; display: flex; flex-direction: column; gap: 10px; }
-h2 { font-size: 16px; color: #780000; margin: 0; }
+.variables { padding: 16px 0; }
+h2 { font-size: 16px; color: #780000; margin: 0 0 6px; }
+h2 + .note { margin-bottom: 12px; }
 .note { font-size: 12px; color: #666; margin: 0; }
-.globale { display: flex; gap: 8px; align-items: center; font-size: 13px; }
-.globale code { flex: none; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 32px; }
+th { text-align: left; font-size: 12px; color: #999; font-weight: 700; padding: 6px 10px; border-bottom: 1px solid #e5e5e5; }
+td { padding: 6px 10px; border-bottom: 1px solid #f2f2f2; font-size: 14px; }
+.col-variable { width: 220px; }
+.col-action { width: 110px; }
+.ajout td { background: #fafafa; }
+code { white-space: nowrap; }
 </style>
