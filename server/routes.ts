@@ -2,8 +2,6 @@ import express from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
 import crypto from 'node:crypto'
-import { execFile } from 'node:child_process'
-import { comparerVersions } from './version'
 import type Database from 'better-sqlite3'
 import { getSettings } from './db'
 import { getStatus } from './printer'
@@ -17,35 +15,6 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
 
   const VERSION = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8')).version as string
   api.get('/ping', (_req, res) => res.json({ ok: true, version: VERSION }))
-
-  // Vérification de mise à jour : interroge les tags du dépôt d'origine via la
-  // clé de déploiement (canal git). Sans git ou hors ligne (image Docker…),
-  // répond verification:false — l'interface n'affiche alors rien.
-  let majCache: { quand: number; corps: object } | null = null
-  api.get('/maj', (_req, res) => {
-    if (majCache && Date.now() - majCache.quand < 3600_000) return res.json(majCache.corps)
-    const cle = path.resolve('deploy/cle-deploiement')
-    const env = {
-      ...process.env,
-      ...(fs.existsSync(cle)
-        ? { GIT_SSH_COMMAND: `ssh -i ${cle} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new` }
-        : {}),
-    }
-    execFile('git', ['ls-remote', '--tags', 'origin'], { env, timeout: 8000 }, (err, sortie) => {
-      if (err) return res.json({ actuelle: VERSION, verification: false })
-      const versions = [...sortie.matchAll(/refs\/tags\/v(\d+\.\d+\.\d+)$/gm)].map((m) => m[1])
-      versions.sort(comparerVersions)
-      const derniere = versions[versions.length - 1] ?? VERSION
-      const corps = {
-        actuelle: VERSION,
-        derniere,
-        disponible: comparerVersions(derniere, VERSION) > 0,
-        verification: true,
-      }
-      majCache = { quand: Date.now(), corps }
-      res.json(corps)
-    })
-  })
 
   // ---- authentification admin (active seulement si un mot de passe est défini) ----
   const sessions = new Set<string>()

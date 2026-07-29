@@ -117,9 +117,12 @@ déploiement** dédiée (`deploy/cle-deploiement`, gitignorée) et affiche la cl
 publique à ajouter dans GitHub → Settings → Deploy keys (lecture seule) —
 la machine de production n'a ainsi jamais besoin de vos identifiants.
 La version installée s'affiche en bas de l'onglet Réglages, avec le titulaire
-de la licence (Réglages → Licence). L'administration vérifie l'existence
-d'une version plus récente (une fois par heure, via la clé de déploiement) et
-l'annonce par une fenêtre — sans jamais l'appliquer seule.
+de la licence (Réglages → Licence).
+
+Pour la maintenance à distance sans rien exposer : un accès sortant type
+[Tailscale](https://tailscale.com) (aucun port à ouvrir, gratuit jusqu'à
+100 machines) permet au prestataire de lancer le script de mise à jour
+sans intervention sur site.
 
 ### Sauvegardes
 

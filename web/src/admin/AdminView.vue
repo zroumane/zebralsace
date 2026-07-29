@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useDialog, useMessage } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 import { api } from '../api'
 import TemplatesTab from './TemplatesTab.vue'
 import HistoryTab from './HistoryTab.vue'
@@ -8,34 +8,14 @@ import ErrorsTab from './ErrorsTab.vue'
 import SettingsTab from './SettingsTab.vue'
 
 const message = useMessage()
-const dialog = useDialog()
 const onglet = ref('modeles')
 const session = ref<{ requis: boolean; connecte: boolean } | null>(null)
 const mdp = ref('')
-const majSignalee = ref(false)
 
 async function chargerSession() {
   session.value = await api.get<{ requis: boolean; connecte: boolean }>('/api/session')
-  if (session.value.connecte) void verifierMaj()
 }
 onMounted(chargerSession)
-
-async function verifierMaj() {
-  if (majSignalee.value) return
-  try {
-    const maj = await api.get<{ actuelle: string; derniere?: string; disponible?: boolean }>('/api/maj')
-    if (maj.disponible) {
-      majSignalee.value = true
-      dialog.info({
-        title: 'Mise à jour disponible',
-        content: `La version ${maj.derniere} est disponible (installée : ${maj.actuelle}). Lancez « deploy/mettre-a-jour.sh » sur le serveur — ou « docker compose pull » selon l'installation — pour l'appliquer.`,
-        positiveText: 'Compris',
-      })
-    }
-  } catch {
-    // vérification indisponible (hors ligne, image Docker…) : silencieux
-  }
-}
 
 async function connecter() {
   try {
