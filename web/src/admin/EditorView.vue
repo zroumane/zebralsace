@@ -272,7 +272,7 @@ const alignement = ref('left')
 const couleurTexte = ref('#000000')
 const couleurForme = ref('#000000')
 const rempli = ref(true)
-// pas de 0,5 mm — arrondi 0..10 (0 = coins carrés), bordure 1..10
+// arrondi 0..10 par pas de 0,5 mm (0 = coins carrés), bordure 1..10 par pas de 0,2 mm
 const arrondi = ref(4)
 const bordure = ref(2)
 const niveau = (n: number, min = 1) => Math.min(10, Math.max(min, n))
@@ -287,15 +287,23 @@ watch(selection, (s: any) => {
     if (s.rx !== undefined) {
       rempli.value = !!(s.fill && s.fill !== 'transparent')
       arrondi.value = niveau(Math.round(s.rx / mmToPx(0.5, dpi.value)), 0)
-      if (s.strokeWidth) bordure.value = niveau(Math.round(s.strokeWidth / mmToPx(0.5, dpi.value)))
+      if (s.strokeWidth) bordure.value = niveau(Math.round(s.strokeWidth / mmToPx(0.2, dpi.value)))
     }
   }
 })
+// toute modification faite depuis le panneau est une vraie modification :
+// on déclenche object:modified pour le traqueur (Enregistrer) et l'historique
+function toucher(o: any) {
+  canvas.value!.fire('object:modified', { target: o } as any)
+  canvas.value!.requestRenderAll()
+}
+
 function appliquer(prop: string, valeur: unknown) {
   const o: any = selection.value
-  if (!o) return
+  // valeur inchangée = rechargement du panneau à la sélection, pas une modification
+  if (!o || o[prop] === valeur) return
   o.set(prop, valeur)
-  canvas.value!.requestRenderAll()
+  toucher(o)
 }
 watch(police, (v) => appliquer('fontFamily', v))
 watch(taille, (v) => appliquer('fontSize', v))
@@ -317,7 +325,7 @@ function basculerStyle(
   } else {
     o.set(prop, o[prop] === actif ? normal : actif)
   }
-  canvas.value!.requestRenderAll()
+  toucher(o)
 }
 
 // Variables disponibles
@@ -505,7 +513,7 @@ function appliquerCouleurTexte(couleur: string) {
     o.set('fill', couleur)
   }
   couleurTexte.value = couleur
-  canvas.value!.requestRenderAll()
+  toucher(o)
 }
 
 // arrondi des coins par niveau (0 = carré) — carré + rectangle plat = un trait
@@ -515,7 +523,7 @@ function appliquerBords(n: number | null) {
   const r = mmToPx(n * 0.5, dpi.value)
   o.set({ rx: r, ry: r })
   o.dirty = true
-  canvas.value!.requestRenderAll()
+  toucher(o)
 }
 
 // rempli (fond plein) ou contour (bordure seule, épaisseur réglable)
@@ -524,18 +532,18 @@ function appliquerRempli(v: boolean) {
   if (!o || o.rx === undefined) return
   const couleur = couleurForme.value || '#000000'
   if (v) o.set({ fill: couleur, stroke: null })
-  else o.set({ fill: 'transparent', stroke: couleur, strokeWidth: mmToPx(bordure.value * 0.5, dpi.value) })
+  else o.set({ fill: 'transparent', stroke: couleur, strokeWidth: mmToPx(bordure.value * 0.2, dpi.value) })
   rempli.value = v
   o.dirty = true
-  canvas.value!.requestRenderAll()
+  toucher(o)
 }
 
 function appliquerEpaisseur(n: number | null) {
   const o: any = selection.value
   if (!o || o.rx === undefined || !n) return
-  o.set('strokeWidth', mmToPx(n * 0.5, dpi.value))
+  o.set('strokeWidth', mmToPx(n * 0.2, dpi.value))
   o.dirty = true
-  canvas.value!.requestRenderAll()
+  toucher(o)
 }
 
 // couleur d'une forme : le fond s'il est plein, le trait s'il existe
@@ -545,7 +553,7 @@ function appliquerCouleurForme(couleur: string) {
   if (o.fill && o.fill !== 'transparent') o.set('fill', couleur)
   if (o.stroke) o.set('stroke', couleur)
   couleurForme.value = couleur
-  canvas.value!.requestRenderAll()
+  toucher(o)
 }
 
 // --- tableau nutritionnel (format INCO : libellés fixes, valeurs éditables) ---
