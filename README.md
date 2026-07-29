@@ -123,8 +123,7 @@ redémarre le service. Au premier lancement, le script génère une **clé de
 déploiement** dédiée (`deploy/cle-deploiement`, gitignorée) et affiche la clé
 publique à ajouter dans GitHub → Settings → Deploy keys (lecture seule) —
 la machine de production n'a ainsi jamais besoin de vos identifiants.
-La version installée s'affiche en bas de l'onglet Réglages, avec le titulaire
-de la licence (Réglages → Licence).
+La version installée s'affiche en bas de l'onglet Réglages.
 
 Pour la maintenance à distance sans rien exposer : un accès sortant type
 [Tailscale](https://tailscale.com) (aucun port à ouvrir, gratuit jusqu'à
@@ -156,4 +155,6 @@ Windows, utilisez WSL.
 - `web/` — Vue 3 : kiosque, admin, éditeur, chemin de rendu unique (`src/render.ts`)
 - `tools/` — simulateur d'imprimante
 - `tests/` — `unit/` (vitest) et `e2e/` (Playwright)
-- `deploy/` — unité systemd
+- `deploy/` — installation, mise à jour et sauvegarde : scripts `.sh`
+  (Linux, service systemd) et `.cmd` (Windows, tâche planifiée), à
+  fonctionnalités identiques
