@@ -23,7 +23,7 @@ onMounted(async () => {
       @click="emit('pick', l)"
     >
       <img :src="`/logos/${l.chemin_fichier}`" :alt="l.nom" />
-      <span>{{ l.nom }}<em v-if="l.type === 'code-barres'"> (CB)</em></span>
+      <span>{{ l.nom }}</span>
     </button>
     <p v-if="!logos.length" class="vide">
       Aucun média — créez-les dans Administration → Médias.
@@ -32,7 +32,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.choix { display: flex; flex-direction: column; gap: 6px; max-height: 45vh; overflow: auto; }
+/* occupe le reste de la colonne d'outils, défile en interne jusqu'en bas */
+.choix { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; overflow: auto; }
 .media {
   display: flex; align-items: center; gap: 8px; padding: 4px 6px;
   background: #fff; border: 1px solid #e5e5e5; border-radius: 6px;
