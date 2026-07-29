@@ -99,9 +99,11 @@ Trois canaux d'installation, selon l'équipement du site :
 - **Linux (depuis les sources)** : `bash deploy/installer.sh` — installe les
   dépendances, build, crée et démarre le service systemd (adapté au dossier
   et à l'utilisateur courants).
-- **Windows (depuis les sources)** : `deploy/zebra-etiquettes.cmd` ; pour un
-  lancement automatique, Planificateur de tâches → « Au démarrage », ou
-  [NSSM](https://nssm.cc) pour un vrai service.
+- **Windows (depuis les sources)** : `deploy\installer.cmd` (en
+  administrateur) — installe les dépendances, build, et enregistre une tâche
+  planifiée « Zebralsace » qui démarre avec la machine et relance
+  l'application si elle s'arrête. Alternative « vrai service » :
+  [NSSM](https://nssm.cc).
 - **Docker** (serveur ou NAS déjà en place) : `docker compose up -d` avec le
   `compose.yml` fourni — image `ghcr.io/zroumane/zebralsace` publiée par la
   CI à chaque version taguée (authentification GHCR : token `packages:read`).

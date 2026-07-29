@@ -31,5 +31,7 @@ if defined TAG (
 call npm ci || exit /b 1
 call npm run build || exit /b 1
 
-echo Mise a jour terminee — relancez l'application (double-clic sur
-echo deploy\zebra-etiquettes.cmd, ou "nssm restart zebra-etiquettes" si installee en service).
+echo Mise a jour terminee. Pour redemarrer :
+echo   schtasks /end /tn Zebralsace ^&^& schtasks /run /tn Zebralsace   (tache planifiee)
+echo   nssm restart zebra-etiquettes                                   (si installe via NSSM)
+echo   sinon : double-clic sur deploy\zebra-etiquettes.cmd
