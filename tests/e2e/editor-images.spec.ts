@@ -23,6 +23,13 @@ test('import nommé dans Médias puis placement depuis l’éditeur', async ({ p
   const logo = logos.find((l: any) => l.nom === 'Logo maison')
   expect(logo).toBeTruthy()
 
+  // renommage via le prompt natif
+  page.once('dialog', (d) => void d.accept('Logo maison v2'))
+  await page.getByTestId(`renommer-${logo.id}`).click()
+  await expect
+    .poll(async () => (await (await request.get('/api/logos')).json()).find((l: any) => l.id === logo.id)?.nom)
+    .toBe('Logo maison v2')
+
   // insertion depuis l'éditeur via la bibliothèque partagée
   await page.goto(`/admin/templates/${id}`)
   await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()

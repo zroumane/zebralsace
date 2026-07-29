@@ -21,21 +21,37 @@ onMounted(charger)
 
 // --- import d'une image ---
 const nomImage = ref('')
+const envoiEnCours = ref(false)
 
 async function surFichier(e: Event) {
   const cible = e.target as HTMLInputElement
   const fichier = cible.files?.[0]
   if (!fichier) return
-  const png = await optimizeImage(fichier, {
-    maxWidthPx: mmToPx(laize.value, dpi.value),
-    resize: true,
-  })
-  const nom = nomImage.value.trim() || fichier.name.replace(/\.\w+$/, '')
-  await api.post('/api/logos', { nom, type: 'logo', png })
-  cible.value = ''
-  nomImage.value = ''
+  envoiEnCours.value = true
+  try {
+    const png = await optimizeImage(fichier, {
+      maxWidthPx: mmToPx(laize.value, dpi.value),
+      resize: true,
+    })
+    const nom = nomImage.value.trim() || fichier.name.replace(/\.\w+$/, '')
+    await api.post('/api/logos', { nom, type: 'logo', png })
+    nomImage.value = ''
+    await charger()
+    message.success(`« ${nom} » ajouté à la bibliothèque`)
+  } catch (err) {
+    message.error(`Import impossible : ${(err as Error).message}`)
+  } finally {
+    envoiEnCours.value = false
+    cible.value = ''
+  }
+}
+
+async function renommer(l: Logo) {
+  const nom = window.prompt('Nouveau nom :', l.nom)?.trim()
+  if (!nom || nom === l.nom) return
+  await api.put(`/api/logos/${l.id}`, { nom })
   await charger()
-  message.success(`« ${nom} » ajouté à la bibliothèque`)
+  message.success(`Renommé en « ${nom} »`)
 }
 
 // --- génération de code-barres (bwip-js, 100 % locale) ---
@@ -84,8 +100,9 @@ async function supprimer(l: Logo) {
     <section>
       <h2>Importer une image</h2>
       <label>Nom <n-input v-model:value="nomImage" data-testid="media-nom" placeholder="par défaut : nom du fichier" /></label>
-      <input type="file" accept="image/png,image/jpeg" data-testid="upload-image" @change="surFichier" />
-      <p class="note">Optimisée à l'import (noir et blanc, résolution configurée).</p>
+      <input type="file" accept="image/png,image/jpeg" data-testid="upload-image" :disabled="envoiEnCours" @change="surFichier" />
+      <p v-if="envoiEnCours" class="note encours"><n-spin size="small" /> Optimisation et envoi en cours…</p>
+      <p v-else class="note">Optimisée à l'import (noir et blanc, résolution configurée).</p>
     </section>
 
     <section>
@@ -117,6 +134,7 @@ async function supprimer(l: Logo) {
           <img :src="`/logos/${l.chemin_fichier}`" :alt="l.nom" />
           <figcaption>
             <b>{{ l.nom }}</b><em v-if="l.type === 'code-barres'"> (code-barres)</em>
+            <n-button size="tiny" quaternary :data-testid="`renommer-${l.id}`" @click="renommer(l)">Renommer</n-button>
             <n-button size="tiny" quaternary type="error" @click="supprimer(l)">Supprimer</n-button>
           </figcaption>
         </figure>
@@ -135,6 +153,7 @@ section.biblio { flex: 1; min-width: 340px; }
 h2 { font-size: 16px; color: #780000; margin: 0; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; }
 .note { font-size: 12px; color: #666; margin: 0; }
+.encours { display: flex; align-items: center; gap: 8px; color: #9a5b00; }
 .vignettes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
 figure { margin: 0; border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px; }
 figure img { max-width: 100%; max-height: 90px; object-fit: contain; background: #fff; display: block; margin: 0 auto; }

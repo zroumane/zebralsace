@@ -54,6 +54,7 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     ['DELETE', /^\/globals/],
     ['PUT', /^\/settings$/],
     ['POST', /^\/logos/],
+    ['PUT', /^\/logos/],
     ['DELETE', /^\/logos/],
   ]
   api.use((req, res, next) => {
@@ -172,6 +173,13 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     )
     db.prepare('UPDATE logos SET chemin_fichier = ? WHERE id = ?').run(fichier, r.lastInsertRowid)
     res.status(201).json(db.prepare('SELECT * FROM logos WHERE id = ?').get(r.lastInsertRowid))
+  })
+  api.put('/logos/:id', (req, res) => {
+    const nom = String(req.body?.nom ?? '').trim()
+    if (!nom) return res.status(400).json({ erreur: 'Nom requis' })
+    const r = db.prepare('UPDATE logos SET nom = ? WHERE id = ?').run(nom, req.params.id)
+    if (!r.changes) return res.status(404).json({ erreur: 'Média introuvable' })
+    res.json(db.prepare('SELECT * FROM logos WHERE id = ?').get(req.params.id))
   })
   api.delete('/logos/:id', (req, res) => {
     const logo = db.prepare('SELECT * FROM logos WHERE id = ?').get(req.params.id) as any
