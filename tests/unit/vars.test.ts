@@ -40,6 +40,17 @@ describe('substituteWithStyles', () => {
     expect(r.styles).toEqual([{ start: 10, end: 12, style: { fontWeight: 'bold' } }])
     expect(r.text.slice(10, 12)).toBe('CD')
   })
+  it('gras + souligné posés sur une variable couvrent la valeur substituée', () => {
+    const r = substituteWithStyles(
+      'DLC {{dlc}}',
+      [{ start: 4, end: 11, style: { underline: true, fontWeight: '700' } }],
+      { dlc: '15/02/2026', date: '01/02/2026' },
+      BASE
+    )
+    expect(r.text).toBe('DLC 15/02/2026')
+    expect(r.styles[0]).toEqual({ start: 4, end: 14, style: { underline: true, fontWeight: '700' } })
+  })
+
   it('étire un style qui englobe la variable', () => {
     const r = substituteWithStyles('{{x}}!', [{ start: 0, end: 6, style: { fontWeight: 'bold' } }], VARS, BASE)
     expect(r.styles[0]).toEqual({ start: 0, end: 7, style: { fontWeight: 'bold' } })

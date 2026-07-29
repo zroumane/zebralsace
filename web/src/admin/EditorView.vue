@@ -98,8 +98,14 @@ watch(police, (v) => appliquer('fontFamily', v))
 watch(taille, (v) => appliquer('fontSize', v))
 watch(alignement, (v) => appliquer('textAlign', v))
 
-// Gras/italique : portion sélectionnée en mode édition, sinon tout le bloc
-function basculerStyle(prop: 'fontWeight' | 'fontStyle', actif: string, normal: string) {
+// Gras/italique/souligné : portion sélectionnée en mode édition, sinon tout
+// le bloc. Un style posé sur une variable {{...}} est conservé après
+// substitution (les plages de style sont étirées par le moteur de variables).
+function basculerStyle(
+  prop: 'fontWeight' | 'fontStyle' | 'underline',
+  actif: string | boolean,
+  normal: string | boolean
+) {
   const o: any = selection.value
   if (!o) return
   if (o.isEditing && o.selectionStart !== o.selectionEnd) {
@@ -318,6 +324,7 @@ async function enregistrer() {
           <div style="display: flex; gap: 8px">
             <n-button @click="basculerStyle('fontWeight', '700', '400')"><b>G</b></n-button>
             <n-button @click="basculerStyle('fontStyle', 'italic', 'normal')"><i>I</i></n-button>
+            <n-button @click="basculerStyle('underline', true, false)"><u>S</u></n-button>
           </div>
         </template>
 
