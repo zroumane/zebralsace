@@ -21,11 +21,13 @@ exactement ce qui sort de l'imprimante.
 - **Éditeur visuel** (`/admin`) — glisser-déposer sur un canvas à l'échelle,
   grille magnétique, textes avec gras/italique **par portion** (allergènes en
   gras au milieu d'un paragraphe), variables `{{date}}`, `{{dlc}}`,
-  `{{date+N}}` et valeurs partagées, bibliothèque d'images optimisées en
-  noir et blanc à l'import (logos redimensionnés, codes-barres jamais
-  agrandis), génération de codes-barres **EAN-13, Code 128 et QR** (100 %
-  locale, aucun service externe), formes, aperçu aux valeurs du jour,
-  impression de test.
+  `{{date+N}}` et valeurs partagées, insertion de médias par titre avec
+  aperçu depuis la bibliothèque partagée, formes, aperçu aux valeurs du
+  jour, impression de test.
+- **Médias** — onglet dédié : bibliothèque partagée entre tous les modèles,
+  import d'images nommées (optimisées noir et blanc à l'import, codes-barres
+  jamais redimensionnés) et **génération nommée de codes-barres EAN-13,
+  Code 128 et QR** (100 % locale, aucun service externe).
 - **Administration** — historique des impressions filtrable par dates,
   rapports d'erreur avec motif, réglages imprimante (IP, résolution
   203/300/600 dpi, laize, contraste, vitesse, décalages X/Y), duplication

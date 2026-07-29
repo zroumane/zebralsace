@@ -1,76 +1,45 @@
 <script setup lang="ts">
+// Sélecteur de médias pour l'éditeur : liste la bibliothèque partagée
+// (titre + aperçu). La création et la gestion se font dans l'onglet Médias.
 import { onMounted, ref } from 'vue'
-import { useMessage } from 'naive-ui'
 import { api, type Logo } from '../api'
-import { optimizeImage } from '../imageOpt'
-import { mmToPx } from '../render'
 
-defineProps<{ mode: 'pick' | 'manage' }>()
 const emit = defineEmits<{ pick: [logo: Logo] }>()
-const message = useMessage()
 
 const logos = ref<Logo[]>([])
-const type = ref<'logo' | 'code-barres'>('logo')
-
-// résolution et laize configurées : un logo optimisé trop petit imprimerait flou
-const dpi = ref(300)
-const laize = ref(104)
-api.get<Record<string, string>>('/api/settings').then((s) => {
-  dpi.value = Number(s.dpi)
-  laize.value = Number(s.laize_mm ?? 104)
-})
-
-async function charger() {
+onMounted(async () => {
   logos.value = await api.get<Logo[]>('/api/logos')
-}
-onMounted(charger)
-
-async function surFichier(e: Event) {
-  const cible = e.target as HTMLInputElement
-  const fichier = cible.files?.[0]
-  if (!fichier) return
-  // laize configurée dans les réglages ; un code-barres n'est jamais redimensionné
-  const png = await optimizeImage(fichier, {
-    maxWidthPx: mmToPx(laize.value, dpi.value),
-    resize: type.value !== 'code-barres',
-  })
-  await api.post('/api/logos', { nom: fichier.name.replace(/\.\w+$/, ''), type: type.value, png })
-  cible.value = ''
-  await charger()
-  message.success('Image optimisée et ajoutée à la bibliothèque')
-}
-
-async function supprimer(l: Logo) {
-  await api.del(`/api/logos/${l.id}`)
-  await charger()
-}
+})
 </script>
 
 <template>
-  <div class="biblio">
-    <n-radio-group v-model:value="type" size="small">
-      <n-radio-button value="logo">Logo</n-radio-button>
-      <n-radio-button value="code-barres">Code-barres</n-radio-button>
-    </n-radio-group>
-    <input type="file" accept="image/png,image/jpeg" data-testid="upload-image" @change="surFichier" />
-    <div class="vignettes">
-      <figure v-for="l in logos" :key="l.id" :data-testid="`logo-${l.id}`">
-        <img :src="`/logos/${l.chemin_fichier}`" :alt="l.nom" @click="mode === 'pick' && emit('pick', l)" />
-        <figcaption>
-          {{ l.nom }}<em v-if="l.type === 'code-barres'"> (code-barres)</em>
-          <n-button v-if="mode === 'manage'" size="tiny" quaternary type="error" @click="supprimer(l)">
-            Supprimer
-          </n-button>
-        </figcaption>
-      </figure>
-    </div>
+  <div class="choix">
+    <button
+      v-for="l in logos"
+      :key="l.id"
+      class="media"
+      :data-testid="`logo-${l.id}`"
+      :title="l.nom"
+      @click="emit('pick', l)"
+    >
+      <img :src="`/logos/${l.chemin_fichier}`" :alt="l.nom" />
+      <span>{{ l.nom }}<em v-if="l.type === 'code-barres'"> (CB)</em></span>
+    </button>
+    <p v-if="!logos.length" class="vide">
+      Aucun média — créez-les dans Administration → Médias.
+    </p>
   </div>
 </template>
 
 <style scoped>
-.biblio { display: flex; flex-direction: column; gap: 8px; }
-.vignettes { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow: auto; }
-figure { margin: 0; }
-figure img { max-width: 100%; border: 1px solid #e5e5e5; cursor: pointer; background: #fff; }
-figcaption { font-size: 12px; color: #666; }
+.choix { display: flex; flex-direction: column; gap: 6px; max-height: 45vh; overflow: auto; }
+.media {
+  display: flex; align-items: center; gap: 8px; padding: 4px 6px;
+  background: #fff; border: 1px solid #e5e5e5; border-radius: 6px;
+  cursor: pointer; font: inherit; text-align: left;
+}
+.media:hover { border-color: #c1121f; }
+.media img { width: 42px; height: 32px; object-fit: contain; flex: none; background: #fff; }
+.media span { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vide { font-size: 12px; color: #999; margin: 0; }
 </style>

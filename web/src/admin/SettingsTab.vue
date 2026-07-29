@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import { api, type Globale, type PrinterStatus } from '../api'
-import LogoLibrary from './LogoLibrary.vue'
 
 const message = useMessage()
 const reglages = ref<Record<string, string>>({})
@@ -145,11 +144,6 @@ async function supprimerGlobale(g: Globale) {
         Affiché à titre de traçabilité — la licence d'utilisation est régie par
         le contrat de prestation.
       </p>
-    </section>
-
-    <section>
-      <h2>Bibliothèque d'images</h2>
-      <LogoLibrary mode="manage" />
     </section>
 
     <p v-if="version" class="version">
