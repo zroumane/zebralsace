@@ -91,12 +91,18 @@ npm run build
 npm run start        # sert l'application sur :3000 (PORT et DATA_DIR surchargeables)
 ```
 
-- **Linux** : `bash deploy/installer.sh` — installe les dépendances, build,
-  crée et démarre le service systemd (adapté au dossier et à l'utilisateur
-  courants). Manuel possible avec `deploy/zebra-etiquettes.service`.
-- **Windows** : script de démarrage fourni — `deploy/zebra-etiquettes.cmd` ;
-  pour un lancement automatique, Planificateur de tâches → « Au démarrage »,
-  ou [NSSM](https://nssm.cc) pour un vrai service.
+Trois canaux d'installation, selon l'équipement du site :
+
+- **Linux (depuis les sources)** : `bash deploy/installer.sh` — installe les
+  dépendances, build, crée et démarre le service systemd (adapté au dossier
+  et à l'utilisateur courants).
+- **Windows (depuis les sources)** : `deploy/zebra-etiquettes.cmd` ; pour un
+  lancement automatique, Planificateur de tâches → « Au démarrage », ou
+  [NSSM](https://nssm.cc) pour un vrai service.
+- **Docker** (serveur ou NAS déjà en place) : `docker compose up -d` avec le
+  `compose.yml` fourni — image `ghcr.io/zroumane/zebralsace` publiée par la
+  CI à chaque version taguée (authentification GHCR : token `packages:read`).
+  Mise à jour : `docker compose pull && docker compose up -d`.
 
 ### Mises à jour
 
@@ -107,7 +113,10 @@ redémarre le service. Au premier lancement, le script génère une **clé de
 déploiement** dédiée (`deploy/cle-deploiement`, gitignorée) et affiche la clé
 publique à ajouter dans GitHub → Settings → Deploy keys (lecture seule) —
 la machine de production n'a ainsi jamais besoin de vos identifiants.
-La version installée s'affiche en bas de l'onglet Réglages.
+La version installée s'affiche en bas de l'onglet Réglages, avec le titulaire
+de la licence (Réglages → Licence). L'administration vérifie l'existence
+d'une version plus récente (une fois par heure, via la clé de déploiement) et
+l'annonce par une fenêtre — sans jamais l'appliquer seule.
 
 ### Sauvegardes
 
