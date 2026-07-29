@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-command -v node >/dev/null || { echo "Node.js 20+ requis (https://nodejs.org)"; exit 1; }
+command -v node >/dev/null || { echo "Node.js 22+ requis (https://nodejs.org)"; exit 1; }
 
 echo "Installation des dépendances et build…"
 npm ci

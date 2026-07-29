@@ -36,7 +36,7 @@ exactement ce qui sort de l'imprimante.
 
 ## Stack
 
-Node 20+, Express 4, SQLite (better-sqlite3), Vue 3, Naive UI, Fabric.js v7,
+Node 22+, Express 4, SQLite (better-sqlite3), Vue 3, Naive UI, Fabric.js v7,
 pngjs. Aucune dépendance cloud : tout tourne sur le LAN.
 
 ## Démarrer
@@ -82,7 +82,7 @@ l'imprimante au kiosque.
 
 ## Déploiement
 
-Prérequis : Node 20+ et une imprimante joignable en TCP sur le port 9100
+Prérequis : Node 22+ et une imprimante joignable en TCP sur le port 9100
 depuis le serveur — la topologie importe peu (LAN, VLAN, VPN…).
 
 ```bash
@@ -103,6 +103,9 @@ Trois canaux d'installation, selon l'équipement du site :
   `compose.yml` fourni — image `ghcr.io/zroumane/zebralsace` publiée par la
   CI à chaque version taguée (authentification GHCR : token `packages:read`).
   Mise à jour : `docker compose pull && docker compose up -d`.
+
+Côté postes : un simple site web, utilisable dans n'importe quel navigateur
+(installable en PWA plein écran).
 
 ### Mises à jour
 
@@ -131,8 +134,6 @@ Sécurité : les modifications (modèles, réglages, valeurs partagées, images)
 demandent alors une connexion ; le kiosque et l'impression restent libres.
 Stocké haché (scrypt), jamais en clair. Pour une exposition au-delà du LAN,
 placez l'application derrière un reverse proxy HTTPS (Caddy, nginx…).
-- Côté postes : un simple site web, utilisable dans n'importe quel
-  navigateur (installable en PWA plein écran).
 
 Note : les suites de test (`npm run e2e`) supposent un shell POSIX — sous
 Windows, utilisez WSL.
