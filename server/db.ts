@@ -6,6 +6,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   printer_ip: '',
   printer_port: '9100',
   dpi: '300',
+  laize_mm: '104',
   contraste: '15',
   vitesse: '4',
   offset_x: '0',

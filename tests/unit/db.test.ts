@@ -21,6 +21,7 @@ describe('db', () => {
   it('insère les réglages par défaut', () => {
     const s = getSettings(tmpDb())
     expect(s.dpi).toBe('300')
+    expect(s.laize_mm).toBe('104')
     expect(s.printer_port).toBe('9100')
     expect(s.printer_ip).toBe('')
   })
