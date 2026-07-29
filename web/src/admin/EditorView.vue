@@ -380,29 +380,32 @@ onMounted(async () => {
   const pas1 = mmToPx(1, dpi.value)
   c.on('object:scaling', (e: any) => {
     const o = e.target
-    if (!o || o.text !== undefined) return
-    if (estLibre(o)) {
-      // rectangle : l'échelle est convertie en vraies dimensions — bordure et
-      // rayons des coins restent constants, rien n'est déformé
-      o.set({
-        width: Math.abs(o.width * o.scaleX),
-        height: Math.abs(o.height * o.scaleY),
-        scaleX: 1,
-        scaleY: 1,
-      })
-      return
-    }
-    o.scaleY = o.scaleX // ratio verrouillé pour tout le reste
+    if (!o || o.text !== undefined || estLibre(o)) return
+    o.scaleY = o.scaleX // ratio verrouillé pour tout sauf les rectangles
   })
   c.on('object:moving', (e) => {
     const o = e.target!
     o.set({ left: Math.round(o.left! / pas1) * pas1, top: Math.round(o.top! / pas1) * pas1 })
     contenir(o)
   })
-  // après redimensionnement ou rotation, on ramène aussi l'objet dans l'étiquette
-  // (enregistré avant `marquer` : l'historique capture l'état déjà contenu)
+  // en fin de geste : un rectangle redimensionné voit son échelle convertie en
+  // vraies dimensions (bordure et rayons constants, jamais déformés) — pas
+  // pendant le geste, fabric calcule l'échelle par rapport aux dimensions de
+  // départ et l'aperçu resterait figé. Puis l'objet est ramené dans l'étiquette.
+  // (enregistré avant `marquer` : l'historique capture l'état final)
   c.on('object:modified', (e: any) => {
-    if (e.target && !e.target.estGrille) contenir(e.target)
+    const o = e.target
+    if (!o || o.estGrille) return
+    if (estLibre(o) && (o.scaleX !== 1 || o.scaleY !== 1)) {
+      o.set({
+        width: Math.abs(o.width * o.scaleX),
+        height: Math.abs(o.height * o.scaleY),
+        scaleX: 1,
+        scaleY: 1,
+      })
+      o.setCoords()
+    }
+    contenir(o)
   })
   c.on('selection:created', () => (selection.value = c.getActiveObject()))
   c.on('selection:updated', () => (selection.value = c.getActiveObject()))
