@@ -280,7 +280,12 @@ onMounted(async () => {
   laize.value = Number(reglages.laize_mm ?? 104)
   await Promise.all(['400 16px Roboto', '700 16px Roboto'].map((f) => document.fonts.load(f)))
 
-  const c = new Canvas(canvasEl.value!, { backgroundColor: '#ffffff', preserveObjectStacking: true })
+  const c = new Canvas(canvasEl.value!, {
+    backgroundColor: '#ffffff',
+    preserveObjectStacking: true,
+    // poignées d'angle libres (pas de ratio verrouillé) ; Maj enfoncée = ratio conservé
+    uniformScaling: false,
+  })
   canvas.value = c
   await c.loadFromJSON(JSON.parse(template.value.doc_json))
   // loadFromJSON réinitialise backgroundColor à undefined (voir render.ts) : on la réapplique.
