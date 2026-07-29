@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import Database from 'better-sqlite3'
 import { initDb, getSettings } from '../../server/db'
 
 function tmpDb() {
@@ -33,10 +34,35 @@ describe('db', () => {
     ).toThrow()
   })
 
-  it('applique les migrations et enregistre la version de schéma', () => {
+  it('une base neuve est marquée au dernier schéma', () => {
     const db = tmpDb()
-    // user_version = nombre de migrations appliquées (0 tant que la liste est vide)
-    expect(db.pragma('user_version', { simple: true })).toBeGreaterThanOrEqual(0)
+    expect(db.pragma('user_version', { simple: true })).toBe(1)
+    const t = db.prepare("SELECT categorie, position FROM templates LIMIT 0").columns()
+    expect(t.map((c) => c.name)).toEqual(['categorie', 'position'])
+  })
+
+  it('migre une base ancienne (colonnes categorie/position ajoutées)', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zebra-migr-'))
+    const vieille = new Database(path.join(dir, 'zebra.db'))
+    vieille.exec(`CREATE TABLE templates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nom TEXT NOT NULL,
+      largeur_mm REAL NOT NULL DEFAULT 100,
+      hauteur_mm REAL NOT NULL DEFAULT 50,
+      dlc_jours INTEGER NOT NULL DEFAULT 7,
+      doc_json TEXT NOT NULL DEFAULT '{"objects":[]}',
+      vignette_png TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    )`)
+    vieille.prepare("INSERT INTO templates (nom) VALUES ('Ancien')").run()
+    vieille.close()
+
+    const db = initDb(dir)
+    const t = db.prepare("SELECT * FROM templates WHERE nom = 'Ancien'").get() as any
+    expect(t.categorie).toBe('')
+    expect(t.position).toBe(0)
+    expect(db.pragma('user_version', { simple: true })).toBe(1)
   })
 
   it('est idempotent (réouverture sans erreur)', () => {

@@ -40,6 +40,22 @@ describe('templates', () => {
     await request(app).get(`/api/templates/${copie.id}`).expect(404)
   })
 
+  it('catégorie et position : modifiables, triées, copiées à la duplication', async () => {
+    const { body: a } = await request(app).post('/api/templates').send({ nom: 'Zeta' }).expect(201)
+    const { body: b } = await request(app).post('/api/templates').send({ nom: 'Alpha' }).expect(201)
+    await request(app).put(`/api/templates/${a.id}`).send({ categorie: 'Tartes', position: 1 }).expect(200)
+    await request(app).put(`/api/templates/${b.id}`).send({ categorie: 'Tartes', position: 2 }).expect(200)
+
+    const { body: liste } = await request(app).get('/api/templates').expect(200)
+    const tartes = liste.filter((t: any) => t.categorie === 'Tartes').map((t: any) => t.nom)
+    expect(tartes).toEqual(['Zeta', 'Alpha']) // position prime sur l'ordre alphabétique
+
+    const { body: copie } = await request(app).post(`/api/templates/${a.id}/duplicate`).expect(201)
+    expect(copie.categorie).toBe('Tartes')
+    expect(copie.position).toBe(1)
+    for (const t of [a, b, copie]) await request(app).delete(`/api/templates/${t.id}`)
+  })
+
   it('duplique avec un nom personnalisé', async () => {
     const { body: t } = await request(app).post('/api/templates').send({ nom: 'Base' }).expect(201)
     const { body: copie } = await request(app)

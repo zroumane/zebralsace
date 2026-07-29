@@ -12,7 +12,8 @@ exactement ce qui sort de l'imprimante.
 
 ## Fonctionnalités
 
-- **Kiosque** (`/`) — grille de modèles, aperçu exact avec dates
+- **Kiosque** (`/`) — modèles par **sections de catégories** (ordre
+  d'affichage défini par modèle dans l'éditeur), aperçu exact avec dates
   calculées automatiquement (fabrication, DLC = fabrication + durée du
   modèle), dates modifiables au moment d'imprimer, option « sans date de
   péremption », quantité sans plafond, indicateur d'état imprimante en

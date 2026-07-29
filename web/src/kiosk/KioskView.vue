@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { api, type Template } from '../api'
 import { useStatus } from '../useStatus'
 import StatusBadge from './StatusBadge.vue'
@@ -20,6 +20,17 @@ async function charger() {
   templates.value = await api.get<Template[]>('/api/templates')
 }
 onMounted(charger)
+
+// sections par catégorie — l'ordre (catégories alphabétiques, puis position
+// définie dans l'éditeur) vient du serveur, on ne fait que regrouper
+const sections = computed(() => {
+  const parCategorie = new Map<string, Template[]>()
+  for (const t of templates.value) {
+    if (!parCategorie.has(t.categorie)) parCategorie.set(t.categorie, [])
+    parCategorie.get(t.categorie)!.push(t)
+  }
+  return [...parCategorie.entries()].map(([categorie, liste]) => ({ categorie, liste }))
+})
 </script>
 
 <template>
@@ -36,20 +47,23 @@ onMounted(charger)
       </span>
     </div>
 
-    <div class="grille">
-      <button
-        v-for="t in templates"
-        :key="t.id"
-        class="carte"
-        :data-testid="`template-${t.id}`"
-        @click="templateChoisi = t"
-      >
-        <span>{{ t.nom }}</span>
-      </button>
-      <p v-if="!templates.length" class="aucun">
-        Aucun modèle d'étiquette. Créez-en un depuis l'administration.
-      </p>
-    </div>
+    <template v-for="s in sections" :key="s.categorie">
+      <h2 v-if="s.categorie" class="section">{{ s.categorie }}</h2>
+      <div class="grille">
+        <button
+          v-for="t in s.liste"
+          :key="t.id"
+          class="carte"
+          :data-testid="`template-${t.id}`"
+          @click="templateChoisi = t"
+        >
+          <span>{{ t.nom }}</span>
+        </button>
+      </div>
+    </template>
+    <p v-if="!templates.length" class="aucun">
+      Aucun modèle d'étiquette. Créez-en un depuis l'administration.
+    </p>
 
     <PrintDialog
       v-if="templateChoisi"
@@ -69,7 +83,9 @@ h1 { flex: 1; margin: 0; font-size: 28px; }
 .job.envoi { background: #fdf3e7; color: #9a5b00; }
 .job.ok { background: #e8f5e9; color: #1b5e20; }
 .job.erreur { background: #fdecea; color: #780000; font-weight: 700; }
-.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 24px 0; }
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 16px 0 24px; }
+.section { margin: 18px 0 0; font-size: 16px; color: #780000; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+.aucun { color: #999; text-align: center; padding: 48px 0; }
 .carte {
   background: #fff; border: 2px solid #e5e5e5; border-radius: 10px;
   min-height: 110px; padding: 16px; cursor: pointer; font: inherit;
@@ -77,5 +93,4 @@ h1 { flex: 1; margin: 0; font-size: 28px; }
 }
 .carte:active { border-color: #c1121f; }
 .carte span { font-weight: 700; font-size: 22px; text-align: center; }
-.aucun { color: #999; grid-column: 1 / -1; text-align: center; padding: 48px 0; }
 </style>

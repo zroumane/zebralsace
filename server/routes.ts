@@ -67,7 +67,13 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   const templateParId = db.prepare('SELECT * FROM templates WHERE id = ?')
 
   api.get('/templates', (_req, res) => {
-    res.json(db.prepare('SELECT * FROM templates ORDER BY nom COLLATE NOCASE').all())
+    res.json(
+      db
+        .prepare(
+          'SELECT * FROM templates ORDER BY categorie COLLATE NOCASE, position, nom COLLATE NOCASE'
+        )
+        .all()
+    )
   })
 
   api.post('/templates', (req, res) => {
@@ -86,7 +92,7 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   api.put('/templates/:id', (req, res) => {
     const t = templateParId.get(req.params.id)
     if (!t) return res.status(404).json({ erreur: 'template introuvable' })
-    const champs = ['nom', 'largeur_mm', 'hauteur_mm', 'dlc_jours', 'doc_json', 'vignette_png']
+    const champs = ['nom', 'largeur_mm', 'hauteur_mm', 'dlc_jours', 'doc_json', 'vignette_png', 'categorie', 'position']
     const maj = champs.filter((c) => req.body[c] !== undefined)
     if (maj.includes('nom') && !String(req.body.nom ?? '').trim())
       return res.status(400).json({ erreur: 'nom requis' })
@@ -107,9 +113,9 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     const nom = String(req.body?.nom ?? '').trim() || `${t.nom} (copie)`
     const r = db
       .prepare(
-        'INSERT INTO templates (nom, largeur_mm, hauteur_mm, dlc_jours, doc_json, vignette_png) VALUES (?,?,?,?,?,?)'
+        'INSERT INTO templates (nom, largeur_mm, hauteur_mm, dlc_jours, doc_json, vignette_png, categorie, position) VALUES (?,?,?,?,?,?,?,?)'
       )
-      .run(nom, t.largeur_mm, t.hauteur_mm, t.dlc_jours, t.doc_json, t.vignette_png)
+      .run(nom, t.largeur_mm, t.hauteur_mm, t.dlc_jours, t.doc_json, t.vignette_png, t.categorie, t.position)
     res.status(201).json(templateParId.get(r.lastInsertRowid))
   })
 

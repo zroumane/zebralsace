@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS templates (
   largeur_mm REAL NOT NULL DEFAULT 100,
   hauteur_mm REAL NOT NULL DEFAULT 50,
   dlc_jours INTEGER NOT NULL DEFAULT 7,
+  categorie TEXT NOT NULL DEFAULT '',
+  position INTEGER NOT NULL DEFAULT 0,
   doc_json TEXT NOT NULL DEFAULT '{"objects":[]}',
   vignette_png TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
@@ -57,14 +59,21 @@ CREATE TABLE IF NOT EXISTS settings (
 // modification d'une table existante (ALTER TABLE…) s'ajoute ICI, jamais dans
 // SCHEMA (le CREATE IF NOT EXISTS ne rejoue pas sur une base déjà créée).
 const MIGRATIONS: string[] = [
-  // ex. "ALTER TABLE templates ADD COLUMN imprimante_id INTEGER"
+  // v1 : catégories et ordre d'affichage des modèles au kiosque
+  `ALTER TABLE templates ADD COLUMN categorie TEXT NOT NULL DEFAULT '';
+   ALTER TABLE templates ADD COLUMN position INTEGER NOT NULL DEFAULT 0;`,
 ]
 
 export function initDb(dataDir: string): Database.Database {
   fs.mkdirSync(path.join(dataDir, 'logos'), { recursive: true })
   const db = new Database(path.join(dataDir, 'zebra.db'))
   db.pragma('journal_mode = WAL')
+  const neuve = !db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='templates'")
+    .get()
   db.exec(SCHEMA)
+  // base neuve : le SCHEMA est déjà au dernier état, rien à rejouer
+  if (neuve) db.pragma(`user_version = ${MIGRATIONS.length}`)
   const ins = db.prepare('INSERT OR IGNORE INTO settings (cle, valeur) VALUES (?, ?)')
   for (const [cle, valeur] of Object.entries(DEFAULT_SETTINGS)) ins.run(cle, valeur)
   const version = db.pragma('user_version', { simple: true }) as number

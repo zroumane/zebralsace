@@ -26,6 +26,8 @@ export interface Template {
   largeur_mm: number
   hauteur_mm: number
   dlc_jours: number
+  categorie: string
+  position: number
   doc_json: string
   vignette_png: string | null
 }

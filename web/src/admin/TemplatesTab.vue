@@ -64,7 +64,10 @@ function supprimer(t: Template) {
         <img v-if="t.vignette_png" :src="t.vignette_png" :alt="t.nom" />
         <div v-else class="vide">Pas encore d'aperçu</div>
         <b>{{ t.nom }}</b>
-        <small>{{ t.largeur_mm }}×{{ t.hauteur_mm }} mm — DLC {{ t.dlc_jours }} j</small>
+        <small>
+          {{ t.largeur_mm }}×{{ t.hauteur_mm }} mm — DLC {{ t.dlc_jours }} j<template v-if="t.categorie">
+            — {{ t.categorie }} (n° {{ t.position }})</template>
+        </small>
         <div class="actions">
           <n-button size="small" @click="router.push(`/admin/templates/${t.id}`)">Modifier</n-button>
           <n-button size="small" quaternary @click="ouvrirDuplication(t)">Dupliquer</n-button>
