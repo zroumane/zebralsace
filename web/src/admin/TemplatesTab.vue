@@ -210,6 +210,7 @@ function supprimer(t: Template) {
       <n-card title="Renommer la catégorie" style="max-width: 400px" closable @close="catRenommage = null">
         <n-input
           v-model:value="catNouveauNom"
+          placeholder=""
           data-testid="champ-renommage-categorie"
           @keyup.enter="validerRenommageCat"
         />
@@ -223,6 +224,7 @@ function supprimer(t: Template) {
       <n-card title="Dupliquer" style="max-width: 400px" closable @close="duplication = null">
         <n-input
           v-model:value="nomDuplication"
+          placeholder=""
           data-testid="champ-duplication"
           @keyup.enter="validerDuplication"
         />

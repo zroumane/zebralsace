@@ -80,7 +80,7 @@ async function tester() {
       <h2>Imprimante</h2>
       <div class="deux">
         <label>Adresse IP <n-input v-model:value="reglages.printer_ip" data-testid="ip" placeholder="192.168.1.50" /></label>
-        <label>Port <n-input v-model:value="reglages.printer_port" /></label>
+        <label>Port <n-input v-model:value="reglages.printer_port" placeholder="9100" /></label>
         <label>
           Résolution
           <n-select

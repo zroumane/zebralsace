@@ -71,6 +71,7 @@ async function connecter() {
       <n-input
         v-model:value="mdp"
         type="password"
+        placeholder="Mot de passe"
         data-testid="mdp-admin"
         style="max-width: 260px"
         @keyup.enter="connecter"

@@ -516,14 +516,14 @@ interface ValeursNutritionnelles {
   sel: string
 }
 
-const LIGNES_NUT: Array<{ label: string; cle: keyof ValeursNutritionnelles; sep: boolean }> = [
-  { label: 'Énergie', cle: 'energie', sep: true },
-  { label: 'Lipides', cle: 'lipides', sep: false },
-  { label: 'dont acides gras saturés', cle: 'satures', sep: true },
-  { label: 'Glucides', cle: 'glucides', sep: false },
-  { label: 'dont sucres', cle: 'sucres', sep: true },
-  { label: 'Protéines', cle: 'proteines', sep: true },
-  { label: 'Sel', cle: 'sel', sep: false },
+const LIGNES_NUT: Array<{ label: string; cle: keyof ValeursNutritionnelles; sep: boolean; ex: string }> = [
+  { label: 'Énergie', cle: 'energie', sep: true, ex: 'ex. 217,57 kcal / 912,57 kJ' },
+  { label: 'Lipides', cle: 'lipides', sep: false, ex: 'ex. 10,33 g' },
+  { label: 'dont acides gras saturés', cle: 'satures', sep: true, ex: 'ex. 3,76 g' },
+  { label: 'Glucides', cle: 'glucides', sep: false, ex: 'ex. 5,13 g' },
+  { label: 'dont sucres', cle: 'sucres', sep: true, ex: 'ex. 3,09 g' },
+  { label: 'Protéines', cle: 'proteines', sep: true, ex: 'ex. 7,86 g' },
+  { label: 'Sel', cle: 'sel', sep: false, ex: 'ex. 1,48 g' },
 ]
 
 const NUT_DEFAUT = (): ValeursNutritionnelles => ({
@@ -695,7 +695,7 @@ async function enregistrer() {
       >
         Enregistrer
       </n-button>
-      <n-input v-model:value="template.nom" data-testid="nom-template" style="flex: 1; min-width: 220px; max-width: 420px" />
+      <n-input v-model:value="template.nom" data-testid="nom-template" placeholder="Nom du modèle" style="flex: 1; min-width: 220px; max-width: 420px" />
       <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="laize" size="small" style="width: 90px" /></label>
       <label>Hauteur (mm) <n-input-number v-model:value="template.hauteur_mm" :min="10" :max="300" size="small" style="width: 90px" /></label>
       <div class="zoom-ctrl" title="Ctrl + molette pour zoomer, Ctrl + glisser pour se déplacer">
@@ -768,10 +768,10 @@ async function enregistrer() {
 
         <template v-else-if="selection && selection.tableauNutritionnel">
           <b>Tableau nutritionnel</b>
-          <label class="ligne-nut">Titre <n-input v-model:value="valNut.titre" size="small" data-testid="nut-titre" /></label>
+          <label class="ligne-nut">Titre <n-input v-model:value="valNut.titre" size="small" placeholder="" data-testid="nut-titre" /></label>
           <label v-for="l in LIGNES_NUT" :key="l.cle" class="ligne-nut">
             {{ l.label }}
-            <n-input v-model:value="valNut[l.cle]" size="small" :data-testid="`nut-${l.cle}`" />
+            <n-input v-model:value="valNut[l.cle]" size="small" :placeholder="l.ex" :data-testid="`nut-${l.cle}`" />
           </label>
           <p class="astuce">Les lignes laissées vides ne sont pas affichées.</p>
         </template>

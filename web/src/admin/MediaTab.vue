@@ -181,6 +181,7 @@ async function surDrop(cible: Logo | null) {
       <n-card title="Renommer le média" style="max-width: 400px" closable @close="renommage = null">
         <n-input
           v-model:value="nouveauNom"
+          placeholder=""
           data-testid="champ-renommage"
           @keyup.enter="validerRenommage"
         />

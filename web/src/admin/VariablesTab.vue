@@ -49,7 +49,7 @@ async function supprimer(g: Globale) {
       <tbody>
         <tr v-for="g in globales" :key="g.cle">
           <td><code v-text="'{{' + g.cle + '}}'" /></td>
-          <td><n-input v-model:value="g.valeur" @blur="maj(g)" /></td>
+          <td><n-input v-model:value="g.valeur" placeholder="" @blur="maj(g)" /></td>
           <td>
             <n-button size="small" quaternary type="error" @click="supprimer(g)">Supprimer</n-button>
           </td>
