@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
 
 test('réglages et valeurs partagées persistent', async ({ page, request }) => {
-  await page.goto('/admin')
-  await page.getByText('Réglages').click()
+  // lien profond : l'onglet Réglages a sa propre URL
+  await page.goto('/admin/reglages')
 
   await page.getByTestId('ip').locator('input').fill('192.168.9.99')
   await page.getByTestId('enregistrer-reglages').click()

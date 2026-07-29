@@ -7,3 +7,14 @@ body {
   user-select: none;
 }
 input, textarea { -webkit-user-select: text; user-select: text; }
+
+/* en-tête commun kiosque / admin : même hauteur, même style partout */
+.entete {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 3px solid #c1121f;
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+}
+.entete h1 { flex: 1; margin: 0; font-size: 24px; }

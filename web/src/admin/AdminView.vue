@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { api } from '../api'
 import BoutonRetour from '../BoutonRetour.vue'
@@ -12,7 +13,20 @@ import ErrorsTab from './ErrorsTab.vue'
 import SettingsTab from './SettingsTab.vue'
 
 const message = useMessage()
-const onglet = ref('modeles')
+const route = useRoute()
+const router = useRouter()
+
+// chaque onglet a sa propre URL : /admin/modeles, /admin/medias, /admin/variables…
+const ONGLETS = ['modeles', 'medias', 'variables', 'historique', 'erreurs', 'reglages']
+const onglet = computed({
+  get: () => {
+    const o = String(route.params.onglet ?? '')
+    return ONGLETS.includes(o) ? o : 'modeles'
+  },
+  set: (o: string) => {
+    void router.replace(`/admin/${o}`)
+  },
+})
 const session = ref<{ requis: boolean; connecte: boolean } | null>(null)
 const mdp = ref('')
 
@@ -34,7 +48,7 @@ async function connecter() {
 
 <template>
   <div class="admin">
-    <header>
+    <header class="entete">
       <h1>Administration</h1>
       <StatusBadge />
       <BoutonRetour to="/" libelle="Retour au kiosque" />
@@ -65,7 +79,5 @@ async function connecter() {
 
 <style scoped>
 .admin { padding: 16px 24px; }
-header { display: flex; align-items: baseline; gap: 24px; border-bottom: 3px solid #c1121f; margin-bottom: 8px; }
-h1 { flex: 1; margin: 0 0 12px; font-size: 24px; }
 .login { display: flex; flex-direction: column; gap: 12px; padding: 32px 0; align-items: flex-start; }
 </style>

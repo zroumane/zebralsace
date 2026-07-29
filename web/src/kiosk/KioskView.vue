@@ -35,7 +35,7 @@ const sections = computed(() => {
 
 <template>
   <div class="kiosque">
-    <header>
+    <header class="entete">
       <h1>Étiquettes</h1>
       <StatusBadge />
       <router-link class="lien-admin" to="/admin">Administration</router-link>
@@ -75,8 +75,6 @@ const sections = computed(() => {
 
 <style scoped>
 .kiosque { min-height: 100vh; padding: 16px 24px; }
-header { display: flex; align-items: center; gap: 24px; border-bottom: 3px solid #c1121f; padding-bottom: 12px; }
-h1 { flex: 1; margin: 0; font-size: 28px; }
 .lien-admin { color: #999; font-size: 14px; text-decoration: none; }
 .file { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0 0; }
 .job { padding: 4px 12px; border-radius: 999px; font-size: 13px; background: #f2f2f2; color: #555; }

@@ -31,6 +31,7 @@ test('historique et erreurs affichent le journal', async ({ page, request }) => 
 
   await page.goto('/admin')
   await page.getByText('Historique').click()
+  await expect(page).toHaveURL(/\/admin\/historique$/) // l'onglet met l'URL à jour
   await expect(page.getByTestId('table-historique')).toContainText('Journal ok')
   await expect(page.getByTestId('table-historique')).toContainText('Journal ko')
 
