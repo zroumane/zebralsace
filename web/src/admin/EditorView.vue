@@ -335,7 +335,7 @@ async function enregistrer() {
 <template>
   <div v-if="template" class="editeur">
     <header>
-      <BoutonRetour to="/admin" libelle="Retour" />
+      <BoutonRetour to="/admin/modeles" libelle="Retour" />
       <n-input v-model:value="template.nom" data-testid="nom-template" style="max-width: 240px" />
       <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="laize" size="small" /></label>
       <label>Hauteur (mm) <n-input-number v-model:value="template.hauteur_mm" :min="10" :max="300" size="small" /></label>

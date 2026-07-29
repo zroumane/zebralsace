@@ -23,7 +23,7 @@ test('nouveau modèle jamais enregistré : quitter le supprime (après confirmat
 
   page.once('dialog', (d) => void d.accept())
   await page.getByTestId('retour').click()
-  await expect(page).toHaveURL(/\/admin$/)
+  await expect(page).toHaveURL(/\/admin\/modeles$/)
   // l'ébauche a été supprimée
   await expect.poll(async () => (await request.get(`/api/templates/${id}`)).status()).toBe(404)
 })
@@ -49,5 +49,5 @@ test('garde-fou : avertit avant de quitter avec des modifications non enregistr�
   await page.getByTestId('enregistrer').click()
   await expect(page.getByText('Modèle enregistré')).toBeVisible()
   await page.getByTestId('retour').click()
-  await expect(page).toHaveURL(/\/admin$/)
+  await expect(page).toHaveURL(/\/admin\/modeles$/)
 })
