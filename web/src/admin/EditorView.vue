@@ -232,11 +232,18 @@ async function placerImage(logo: Logo) {
 const police = ref('Roboto')
 const taille = ref(24)
 const alignement = ref('left')
+const couleurTexte = ref('#000000')
+const couleurForme = ref('#000000')
+const bordsArrondis = ref(true)
 watch(selection, (s: any) => {
   if (s?.text !== undefined) {
     police.value = s.fontFamily
     taille.value = s.fontSize
     alignement.value = s.textAlign ?? 'left'
+    couleurTexte.value = s.fill
+  } else if (s) {
+    couleurForme.value = s.fill && s.fill !== 'transparent' ? s.fill : s.stroke
+    if (s.rx !== undefined) bordsArrondis.value = s.rx > 0
   }
 })
 function appliquer(prop: string, valeur: unknown) {
@@ -453,6 +460,7 @@ function appliquerCouleurTexte(couleur: string) {
   } else {
     o.set('fill', couleur)
   }
+  couleurTexte.value = couleur
   canvas.value!.requestRenderAll()
 }
 
@@ -464,6 +472,7 @@ function appliquerBords(rayonMm: number) {
   const r = mmToPx(rayonMm, dpi.value)
   o.set({ rx: r, ry: r })
   o.dirty = true
+  bordsArrondis.value = rayonMm > 0
   canvas.value!.requestRenderAll()
 }
 
@@ -473,6 +482,7 @@ function appliquerCouleurForme(couleur: string) {
   if (!o) return
   if (o.fill && o.fill !== 'transparent') o.set('fill', couleur)
   if (o.stroke) o.set('stroke', couleur)
+  couleurForme.value = couleur
   canvas.value!.requestRenderAll()
 }
 
@@ -715,10 +725,10 @@ async function enregistrer() {
           </div>
           <div style="display: flex; gap: 8px; align-items: center">
             <span class="libelle-couleur">Couleur</span>
-            <n-button size="small" @click="appliquerCouleurTexte('#000000')">
+            <n-button size="small" :type="couleurTexte === '#000000' ? 'primary' : 'default'" @click="appliquerCouleurTexte('#000000')">
               <span class="pastille noire" /> Noir
             </n-button>
-            <n-button size="small" @click="appliquerCouleurTexte('#ffffff')">
+            <n-button size="small" :type="couleurTexte === '#ffffff' ? 'primary' : 'default'" @click="appliquerCouleurTexte('#ffffff')">
               <span class="pastille blanche" /> Blanc
             </n-button>
           </div>
@@ -741,17 +751,17 @@ async function enregistrer() {
           <b>Forme</b>
           <div style="display: flex; gap: 8px; align-items: center">
             <span class="libelle-couleur">Couleur</span>
-            <n-button size="small" @click="appliquerCouleurForme('#000000')">
+            <n-button size="small" :type="couleurForme === '#000000' ? 'primary' : 'default'" @click="appliquerCouleurForme('#000000')">
               <span class="pastille noire" /> Noir
             </n-button>
-            <n-button size="small" @click="appliquerCouleurForme('#ffffff')">
+            <n-button size="small" :type="couleurForme === '#ffffff' ? 'primary' : 'default'" @click="appliquerCouleurForme('#ffffff')">
               <span class="pastille blanche" /> Blanc
             </n-button>
           </div>
           <div v-if="selection.rx !== undefined" style="display: flex; gap: 8px; align-items: center">
             <span class="libelle-couleur">Bords</span>
-            <n-button size="small" @click="appliquerBords(2)">Arrondis</n-button>
-            <n-button size="small" data-testid="bords-carres" @click="appliquerBords(0)">Carrés</n-button>
+            <n-button size="small" :type="bordsArrondis ? 'primary' : 'default'" @click="appliquerBords(2)">Arrondis</n-button>
+            <n-button size="small" data-testid="bords-carres" :type="!bordsArrondis ? 'primary' : 'default'" @click="appliquerBords(0)">Carrés</n-button>
           </div>
           <p class="astuce">
             Une forme blanche est invisible sur le fond blanc de l'étiquette —
