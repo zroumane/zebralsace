@@ -90,6 +90,15 @@ describe('hydrateDoc', () => {
     const doc4 = { objects: [{ type: 'Textbox', text: '{{date+7}}', styles: [] }] }
     expect(hydrateDoc(doc4, { dlc: 'x', date: 'y' }, BASE, false, true).objects).toHaveLength(0)
   })
+  it('bloc mixte date + dlc : ne masquer que la dlc garde le bloc et efface {{dlc}}', () => {
+    const mixte = { objects: [{ type: 'Textbox', text: 'Fab {{date}} DLC {{dlc}}', styles: [] }] }
+    const h = hydrateDoc(mixte, { date: '01/02/2026', dlc: '15/02/2026' }, BASE, true)
+    expect(h.objects).toHaveLength(1)
+    expect(h.objects[0].text).toContain('01/02/2026')
+    expect(h.objects[0].text).not.toContain('15/02/2026')
+    // les deux masquées : le bloc disparaît
+    expect(hydrateDoc(mixte, { date: 'x', dlc: 'y' }, BASE, true, true).objects).toHaveLength(0)
+  })
   it('ne modifie pas le doc d\'origine', () => {
     hydrateDoc(doc, { dlc: 'x', date: 'y' }, BASE, false)
     expect(doc.objects[0].text).toBe('DLC {{dlc}}')

@@ -30,7 +30,14 @@ export function computeVars(
 
 const VAR_RE = /\{\{\s*([a-zà-öø-ÿ_][\w-]*)\s*(?:\+\s*(\d+))?\s*\}\}/gi
 
-function resoudre(nom: string, plus: string | undefined, vars: Record<string, string>, baseDate: Date): string | null {
+function resoudre(
+  nom: string,
+  plus: string | undefined,
+  vars: Record<string, string>,
+  baseDate: Date,
+  masquees?: Set<string>
+): string | null {
+  if (masquees?.has(nom)) return '' // variable décochée à l'impression : effacée
   if (plus) return nom === 'date' ? formatDate(addDays(baseDate, Number(plus))) : null
   return vars[nom] ?? null
 }
@@ -39,14 +46,15 @@ export function substituteWithStyles(
   text: string,
   styles: StyleRange[],
   vars: Record<string, string>,
-  baseDate: Date
+  baseDate: Date,
+  masquees?: Set<string>
 ): { text: string; styles: StyleRange[] } {
   let out = text
   let ranges = styles.map((r) => ({ ...r }))
   VAR_RE.lastIndex = 0
   let m: RegExpExecArray | null
   while ((m = VAR_RE.exec(out))) {
-    const val = resoudre(m[1].toLowerCase(), m[2], vars, baseDate)
+    const val = resoudre(m[1].toLowerCase(), m[2], vars, baseDate, masquees)
     if (val == null) continue // inconnue : on laisse le littéral visible
     const debut = m.index
     const ancienneLg = m[0].length
@@ -73,14 +81,19 @@ export function hydrateDoc(
   hideDate = false
 ): any {
   const clone = structuredClone(doc)
-  clone.objects = (clone.objects ?? []).filter(
-    (o: any) =>
-      !(hideDlc && typeof o.text === 'string' && DLC_RE.test(o.text)) &&
-      !(hideDate && typeof o.text === 'string' && DATE_RE.test(o.text))
-  )
+  const masquees = new Set<string>([...(hideDlc ? ['dlc'] : []), ...(hideDate ? ['date'] : [])])
+  // Un bloc n'est supprimé en entier que si toutes ses dates sont décochées.
+  // Bloc mixte (date + dlc) dont l'une reste visible : conservé, la variable
+  // cachée y est simplement effacée par la substitution.
+  clone.objects = (clone.objects ?? []).filter((o: any) => {
+    if (typeof o.text !== 'string') return true
+    const aCacher = (hideDlc && DLC_RE.test(o.text)) || (hideDate && DATE_RE.test(o.text))
+    if (!aCacher) return true
+    return (!hideDlc && DLC_RE.test(o.text)) || (!hideDate && DATE_RE.test(o.text))
+  })
   for (const o of clone.objects) {
     if (typeof o.text === 'string') {
-      const r = substituteWithStyles(o.text, o.styles ?? [], vars, baseDate)
+      const r = substituteWithStyles(o.text, o.styles ?? [], vars, baseDate, masquees)
       o.text = r.text
       o.styles = r.styles
     }
