@@ -133,9 +133,11 @@ sans intervention sur site.
 
 ### Sauvegardes
 
-`bash deploy/sauvegarde.sh [dossier]` : copie cohérente de la base (API de
-sauvegarde SQLite, sûre même en cours d'écriture) + logos, rétention des
-30 dernières. À planifier, par ex. `0 3 * * *` en cron.
+`bash deploy/sauvegarde.sh [dossier]` (Linux) ou `deploy\sauvegarde.cmd
+[dossier]` (Windows) : copie cohérente de la base (API de sauvegarde SQLite,
+sûre même en cours d'écriture) + logos, rétention des 30 dernières. À
+planifier : `0 3 * * *` en cron, ou `schtasks /sc daily /st 03:00` sous
+Windows (exemple complet en tête du script).
 
 ### Sécurité
 
