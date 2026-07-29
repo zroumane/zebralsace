@@ -272,10 +272,10 @@ const alignement = ref('left')
 const couleurTexte = ref('#000000')
 const couleurForme = ref('#000000')
 const rempli = ref(true)
-// niveaux 1..10, par pas de 0,5 mm — arrondi 1 = coins carrés, bordure 1 = 0,5 mm
-const arrondi = ref(5)
+// pas de 0,5 mm — arrondi 0..10 (0 = coins carrés), bordure 1..10
+const arrondi = ref(4)
 const bordure = ref(2)
-const niveau = (n: number) => Math.min(10, Math.max(1, n))
+const niveau = (n: number, min = 1) => Math.min(10, Math.max(min, n))
 watch(selection, (s: any) => {
   if (s?.text !== undefined) {
     police.value = s.fontFamily
@@ -286,7 +286,7 @@ watch(selection, (s: any) => {
     couleurForme.value = s.fill && s.fill !== 'transparent' ? s.fill : s.stroke
     if (s.rx !== undefined) {
       rempli.value = !!(s.fill && s.fill !== 'transparent')
-      arrondi.value = niveau(Math.round(s.rx / mmToPx(0.5, dpi.value)) + 1)
+      arrondi.value = niveau(Math.round(s.rx / mmToPx(0.5, dpi.value)), 0)
       if (s.strokeWidth) bordure.value = niveau(Math.round(s.strokeWidth / mmToPx(0.5, dpi.value)))
     }
   }
@@ -508,11 +508,11 @@ function appliquerCouleurTexte(couleur: string) {
   canvas.value!.requestRenderAll()
 }
 
-// arrondi des coins par niveau (1 = carré) — carré + rectangle plat = un trait
+// arrondi des coins par niveau (0 = carré) — carré + rectangle plat = un trait
 function appliquerBords(n: number | null) {
   const o: any = selection.value
-  if (!o || o.rx === undefined || !n) return
-  const r = mmToPx((n - 1) * 0.5, dpi.value)
+  if (!o || o.rx === undefined || n == null) return
+  const r = mmToPx(n * 0.5, dpi.value)
   o.set({ rx: r, ry: r })
   o.dirty = true
   canvas.value!.requestRenderAll()
@@ -852,7 +852,7 @@ async function enregistrer() {
             <n-input-number
               v-model:value="arrondi"
               size="small"
-              :min="1"
+              :min="0"
               :max="10"
               style="width: 110px"
               data-testid="niveau-arrondi"
