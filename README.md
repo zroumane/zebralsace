@@ -27,9 +27,9 @@ exactement ce qui sort de l'imprimante.
   locale, aucun service externe), formes, aperçu aux valeurs du jour,
   impression de test.
 - **Administration** — historique des impressions filtrable par dates,
-  rapports d'erreur avec motif, réglages imprimante (IP, 203/300 dpi,
-  contraste, vitesse, décalages X/Y), duplication de modèles avec choix
-  du nom.
+  rapports d'erreur avec motif, réglages imprimante (IP, résolution
+  203/300/600 dpi, laize, contraste, vitesse, décalages X/Y), duplication
+  de modèles avec choix du nom.
 - **Simulateur d'imprimante** — développez sans matériel : il répond au
   statut `~HS` (pannes simulables d'un clic) et décode les jobs `^GFA`
   reçus pour afficher l'étiquette en direct dans le navigateur.
