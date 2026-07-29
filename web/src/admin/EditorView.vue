@@ -200,10 +200,15 @@ onMounted(async () => {
   pret.value = true
 })
 
-// les propriétés du modèle comptent aussi comme modifications (pas le zoom)
+// les propriétés du modèle comptent aussi comme modifications (pas le zoom).
+// Sources primitives : ne se déclenche que si une VALEUR change réellement.
 watch(
-  () =>
-    template.value && [template.value.nom, template.value.largeur_mm, template.value.hauteur_mm, template.value.dlc_jours],
+  [
+    () => template.value?.nom,
+    () => template.value?.largeur_mm,
+    () => template.value?.hauteur_mm,
+    () => template.value?.dlc_jours,
+  ],
   () => {
     if (pret.value) modifie.value = true
   }
@@ -294,7 +299,9 @@ async function imprimerTest() {
 async function enregistrer() {
   const t = template.value!
   try {
-    template.value = await api.put<Template>(`/api/templates/${t.id}`, {
+    // ne PAS réassigner template.value avec la réponse : cela redéclencherait
+    // le traqueur de modifications juste après sa remise à zéro
+    await api.put<Template>(`/api/templates/${t.id}`, {
       nom: t.nom,
       largeur_mm: t.largeur_mm,
       hauteur_mm: t.hauteur_mm,
