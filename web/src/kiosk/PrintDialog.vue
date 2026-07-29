@@ -181,20 +181,23 @@ async function imprimer() {
 .dims { font-size: 15px; font-weight: 400; color: #888; margin-left: 10px; }
 .contenu { display: flex; gap: 32px; flex: 1; min-height: 0; }
 .apercu { flex: 1; min-width: 0; align-self: flex-start; border: 1px solid #e5e5e5; max-height: calc(100vh - 140px); object-fit: contain; }
-.reglages { width: 440px; display: flex; flex-direction: column; gap: 20px; }
+/* tablette : cibles tactiles généreuses, tout en grand */
+.reglages { width: 520px; display: flex; flex-direction: column; gap: 28px; }
 /* les deux dates côte à côte, IMPRIMER calé en bas de la colonne */
-.dates { display: flex; gap: 16px; }
+.dates { display: flex; gap: 20px; }
 .dates .date-choix { flex: 1; }
-.btn-imprimer { margin-top: auto; --n-height: 64px !important; font-size: 20px; }
-.date-choix { display: flex; flex-direction: column; gap: 6px; }
+.btn-imprimer { margin-top: auto; --n-height: 76px !important; font-size: 24px; letter-spacing: 1px; }
+.date-choix { display: flex; flex-direction: column; gap: 10px; }
+.date-choix :deep(.n-checkbox) { --n-size: 26px !important; --n-font-size: 18px !important; align-items: center; }
 .date-choix :deep(.n-checkbox__label) { font-weight: 700; }
-.date-choix input { font-size: 18px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+.date-choix input { font-size: 22px; padding: 14px 12px; border: 1px solid #ccc; border-radius: 8px; width: 100%; box-sizing: border-box; }
 .inactif input { opacity: 0.45; }
 /* − à gauche, + à droite, le nombre en gros au centre */
-.quantite { display: flex; gap: 6px; align-items: stretch; }
-.quantite :deep(.n-button) { --n-height: 52px !important; height: 52px; }
-.quantite :deep(.n-input-number) { flex: 1; min-width: 110px; }
-.quantite :deep(.n-input-number .n-input) { --n-height: 52px !important; --n-font-size: 28px !important; }
+.quantite { display: flex; gap: 10px; align-items: stretch; }
+.quantite :deep(.n-button) { --n-height: 64px !important; height: 64px; font-size: 19px; padding: 0 14px; }
+.quantite :deep(.n-input-number) { flex: 1; min-width: 120px; }
+.quantite :deep(.n-input-number .n-input) { --n-height: 64px !important; --n-font-size: 36px !important; }
 .quantite :deep(.n-input-number input) { text-align: center; font-weight: 700; }
+.bloque { font-size: 18px; }
 .bloque { color: #780000; font-weight: 700; margin: 0; }
 </style>
