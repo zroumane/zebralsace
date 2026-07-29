@@ -313,19 +313,20 @@ async function enregistrer() {
           <n-input-number v-model:value="taille" :min="8" :max="400">
             <template #suffix>px</template>
           </n-input-number>
-          <n-select
-            v-model:value="alignement"
-            :options="[
-              { label: 'Gauche', value: 'left' },
-              { label: 'Centré', value: 'center' },
-              { label: 'Droite', value: 'right' },
-            ]"
-          />
+          <div style="display: flex; gap: 6px">
+            <n-button size="small" :type="alignement === 'left' ? 'primary' : 'default'" @click="alignement = 'left'">Gauche</n-button>
+            <n-button size="small" :type="alignement === 'center' ? 'primary' : 'default'" @click="alignement = 'center'">Centré</n-button>
+            <n-button size="small" :type="alignement === 'right' ? 'primary' : 'default'" @click="alignement = 'right'">Droite</n-button>
+          </div>
           <div style="display: flex; gap: 8px">
             <n-button @click="basculerStyle('fontWeight', '700', '400')"><b>G</b></n-button>
             <n-button @click="basculerStyle('fontStyle', 'italic', 'normal')"><i>I</i></n-button>
             <n-button @click="basculerStyle('underline', true, false)"><u>S</u></n-button>
           </div>
+          <p class="astuce">
+            Double-cliquez dans le bloc puis sélectionnez une portion : G, I et S
+            ne s'appliquent qu'à elle. Sans sélection, tout le bloc est mis en forme.
+          </p>
         </template>
 
         <b>Variables</b>
@@ -361,4 +362,5 @@ header label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .zone-canvas { flex: 1; overflow: auto; background: #f7f7f7; padding: 24px; }
 .zone-canvas canvas { box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15); }
 .props { width: 260px; padding: 12px; border-left: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 12px; }
+.astuce { font-size: 12px; color: #999; margin: 0; }
 </style>
