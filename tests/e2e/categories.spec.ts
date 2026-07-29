@@ -18,3 +18,21 @@ test('le kiosque affiche des sections par catégorie, ordonnées par position', 
   await expect(cartes.nth(0)).toContainText('Section e2e premier')
   await expect(cartes.nth(1)).toContainText('Section e2e second')
 })
+
+test('drag & drop dans l’admin : déposer un modèle dans une catégorie créée', async ({ page, request }) => {
+  const { id } = await (await request.post('/api/templates', { data: { nom: 'DnD e2e' } })).json()
+
+  await page.goto('/admin')
+  await page.getByTestId('nouvelle-categorie').click()
+  await page.getByTestId('champ-categorie').locator('input').fill('Glissée e2e')
+  await page.getByTestId('valider-categorie').click()
+  await expect(page.getByTestId('categorie-Glissée e2e')).toBeVisible()
+
+  await page.dragAndDrop(
+    `[data-testid="admin-template-${id}"]`,
+    '[data-testid="categorie-Glissée e2e"]'
+  )
+  await expect
+    .poll(async () => (await (await request.get(`/api/templates/${id}`)).json()).categorie)
+    .toBe('Glissée e2e')
+})
