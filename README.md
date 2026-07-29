@@ -1,8 +1,8 @@
-# zebra — poste d'impression d'étiquettes (imprimantes Zebra)
+# Zebralsace
 
 Application web auto-hébergée pour imprimer des étiquettes (alimentaires ou
-autres) sur une imprimante thermique Zebra en réseau : une tablette sert de
-kiosque en atelier, un éditeur visuel permet de créer les modèles sans
+autres) sur une imprimante thermique Zebra en réseau : un kiosque
+d'impression pour l'atelier, un éditeur visuel pour créer les modèles sans
 compétence technique.
 
 Le navigateur rend l'étiquette en PNG à la résolution native de l'imprimante ;
@@ -12,12 +12,12 @@ exactement ce qui sort de l'imprimante.
 
 ## Fonctionnalités
 
-- **Kiosque tablette** (`/`) — grille de modèles, aperçu exact avec dates
+- **Kiosque** (`/`) — grille de modèles, aperçu exact avec dates
   calculées automatiquement (fabrication, DLC = fabrication + durée du
   modèle), dates modifiables au moment d'imprimer, option « sans date de
   péremption », quantité sans plafond, indicateur d'état imprimante en
   direct (fin de papier, tête ouverte, pause…), file d'impression visible
-  avec l'état de chaque lot. PWA plein écran pour tablette.
+  avec l'état de chaque lot. Installable en PWA plein écran.
 - **Éditeur visuel** (`/admin`) — glisser-déposer sur un canvas à l'échelle,
   grille magnétique, textes avec gras/italique **par portion** (allergènes en
   gras au milieu d'un paragraphe), variables `{{date}}`, `{{dlc}}`,
@@ -104,8 +104,8 @@ et redémarre le service. Au premier lancement, le script génère une **clé de
 déploiement** dédiée (`deploy/cle-deploiement`, gitignorée) et affiche la clé
 publique à ajouter dans GitHub → Settings → Deploy keys (lecture seule) —
 la machine de production n'a ainsi jamais besoin de vos identifiants.
-- Côté postes : l'application est un simple site web — installable en plein
-  écran (PWA) sur n'importe quelle tablette, ou utilisable au navigateur.
+- Côté postes : un simple site web, utilisable dans n'importe quel
+  navigateur (installable en PWA plein écran).
 
 Note : les suites de test (`npm run e2e`) supposent un shell POSIX — sous
 Windows, utilisez WSL.
