@@ -675,7 +675,6 @@ async function enregistrer() {
       <n-input v-model:value="template.nom" data-testid="nom-template" style="max-width: 240px" />
       <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="laize" size="small" /></label>
       <label>Hauteur (mm) <n-input-number v-model:value="template.hauteur_mm" :min="10" :max="300" size="small" /></label>
-      <label>DLC (jours) <n-input-number v-model:value="template.dlc_jours" :min="0" :max="365" size="small" /></label>
       <div class="zoom-ctrl" title="Ctrl + molette pour zoomer, Ctrl + glisser pour se déplacer">
         <n-button size="small" quaternary @click="changerZoom(1 / 1.25)">−</n-button>
         <span class="zoom-affiche" data-testid="zoom">{{ Math.round(zoom * 100) }} %</span>
@@ -777,6 +776,7 @@ async function enregistrer() {
         </template>
 
         <b>Variables</b>
+        <label>DLC (jours) <n-input-number v-model:value="template.dlc_jours" :min="0" :max="365" size="small" /></label>
         <n-button
           v-for="v in ['{{date}}', '{{dlc}}', ...globales.map((g) => `{{${g.cle}}}`)]"
           :key="v"
