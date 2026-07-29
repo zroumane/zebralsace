@@ -25,9 +25,9 @@ exactement ce qui sort de l'imprimante.
   aperçu depuis la bibliothèque partagée, formes, aperçu aux valeurs du
   jour, impression de test.
 - **Médias** — onglet dédié : bibliothèque partagée entre tous les modèles,
-  import d'images nommées (optimisées noir et blanc à l'import, codes-barres
-  jamais redimensionnés) et **génération nommée de codes-barres EAN-13,
-  Code 128 et QR** (100 % locale, aucun service externe).
+  import d'images nommées (optimisées noir et blanc à l'import) et
+  **génération nommée de codes-barres EAN-13, Code 128 et QR** (100 %
+  locale, aucun service externe, jamais redimensionnés au placement).
 - **Administration** — historique des impressions filtrable par dates,
   rapports d'erreur avec motif, réglages imprimante (IP, résolution
   203/300/600 dpi, laize, contraste, vitesse, décalages X/Y), duplication

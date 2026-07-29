@@ -21,7 +21,6 @@ onMounted(charger)
 
 // --- import d'une image ---
 const nomImage = ref('')
-const typeImage = ref<'logo' | 'code-barres'>('logo')
 
 async function surFichier(e: Event) {
   const cible = e.target as HTMLInputElement
@@ -29,10 +28,10 @@ async function surFichier(e: Event) {
   if (!fichier) return
   const png = await optimizeImage(fichier, {
     maxWidthPx: mmToPx(laize.value, dpi.value),
-    resize: typeImage.value !== 'code-barres',
+    resize: true,
   })
   const nom = nomImage.value.trim() || fichier.name.replace(/\.\w+$/, '')
-  await api.post('/api/logos', { nom, type: typeImage.value, png })
+  await api.post('/api/logos', { nom, type: 'logo', png })
   cible.value = ''
   nomImage.value = ''
   await charger()
@@ -85,15 +84,8 @@ async function supprimer(l: Logo) {
     <section>
       <h2>Importer une image</h2>
       <label>Nom <n-input v-model:value="nomImage" data-testid="media-nom" placeholder="par défaut : nom du fichier" /></label>
-      <n-radio-group v-model:value="typeImage" size="small">
-        <n-radio-button value="logo">Logo</n-radio-button>
-        <n-radio-button value="code-barres">Code-barres</n-radio-button>
-      </n-radio-group>
       <input type="file" accept="image/png,image/jpeg" data-testid="upload-image" @change="surFichier" />
-      <p class="note">
-        Optimisée à l'import (noir et blanc, résolution configurée).
-        Un code-barres importé n'est jamais redimensionné.
-      </p>
+      <p class="note">Optimisée à l'import (noir et blanc, résolution configurée).</p>
     </section>
 
     <section>
