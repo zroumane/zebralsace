@@ -1,4 +1,4 @@
-# zebra — poste d'impression d'étiquettes (Zebra ZT231)
+# zebra — poste d'impression d'étiquettes (imprimantes Zebra)
 
 Application web auto-hébergée pour imprimer des étiquettes (alimentaires ou
 autres) sur une imprimante thermique Zebra en réseau : une tablette sert de
@@ -17,7 +17,7 @@ exactement ce qui sort de l'imprimante.
   modèle), dates modifiables au moment d'imprimer, option « sans date de
   péremption », quantité sans plafond, indicateur d'état imprimante en
   direct (fin de papier, tête ouverte, pause…), file d'impression visible
-  avec l'état de chaque lot. PWA plein écran pensée pour iPad.
+  avec l'état de chaque lot. PWA plein écran pour tablette.
 - **Éditeur visuel** (`/admin`) — glisser-déposer sur un canvas à l'échelle,
   grille magnétique, textes avec gras/italique **par portion** (allergènes en
   gras au milieu d'un paragraphe), variables `{{date}}`, `{{dlc}}`,
@@ -59,11 +59,47 @@ sur la page du simulateur.
 | `npm run e2e` | Tests bout en bout (Playwright, fausse imprimante TCP, snapshot de rendu au pixel près) |
 | `npm run build` puis `npm run start` | Production sur :3000 |
 
+## Imprimantes supportées
+
+Toute imprimante Zebra parlant **ZPL II** et joignable en TCP/IP (port 9100),
+soit l'essentiel des gammes ZT, ZD, GK/GX, ZQ… Résolution (203, 300 ou
+600 dpi) et laize (largeur maximale d'impression) se configurent dans les
+réglages. Hors périmètre : connexions USB/Bluetooth et anciens modèles
+EPL-only.
+
+## Plusieurs utilisateurs en même temps
+
+Kiosques et administration peuvent être ouverts simultanément sur autant de
+postes que nécessaire : la file d'impression sérialise les envois côté
+serveur et la base (SQLite en mode WAL) accepte les lectures concurrentes.
+Seule limite : si deux personnes enregistrent le même modèle au même
+moment, le dernier enregistrement gagne.
+
+Évolution prévue : gestion de plusieurs imprimantes, avec choix de
+l'imprimante au kiosque.
+
 ## Déploiement
 
-Voir [README-deploiement.md](README-deploiement.md) : service systemd,
-adresses IP fixes, installation sur tablette, checklist de calibration
-physique (échelle, contraste, scan des codes-barres).
+Prérequis : Node 20+ et une imprimante joignable en TCP sur le port 9100
+depuis le serveur — la topologie importe peu (LAN, VLAN, VPN…).
+
+```bash
+npm ci
+npm run build
+npm run start        # sert l'application sur :3000 (PORT et DATA_DIR surchargeables)
+```
+
+- **Linux** : unité systemd fournie — `deploy/zebra-etiquettes.service`
+  (copier dans `/etc/systemd/system/`, adapter `WorkingDirectory`, puis
+  `systemctl enable --now zebra-etiquettes`).
+- **Windows** : script fourni — `deploy/zebra-etiquettes.cmd` ; pour un
+  lancement automatique, Planificateur de tâches → « Au démarrage », ou
+  [NSSM](https://nssm.cc) pour un vrai service.
+- Côté postes : l'application est un simple site web — installable en plein
+  écran (PWA) sur n'importe quelle tablette, ou utilisable au navigateur.
+
+Note : les suites de test (`npm run e2e`) supposent un shell POSIX — sous
+Windows, utilisez WSL.
 
 ## Dossiers
 

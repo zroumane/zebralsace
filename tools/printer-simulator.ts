@@ -71,11 +71,11 @@ net
     })
     sock.on('error', () => {})
   })
-  .listen(ZPL_PORT, () => console.log(`Simulateur ZT231 — port ZPL : ${ZPL_PORT}`))
+  .listen(ZPL_PORT, () => console.log(`Simulateur Zebra — port ZPL : ${ZPL_PORT}`))
 
 // --- page de suivi en direct ---
 const PAGE = `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><title>Simulateur ZT231</title>
+<html lang="fr"><head><meta charset="utf-8"><title>Simulateur Zebra</title>
 <style>
 body{font-family:sans-serif;margin:0;background:#fff;color:#1c1c1c}
 header{border-bottom:3px solid #c1121f;padding:12px 24px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
@@ -87,7 +87,7 @@ main{padding:16px 24px;display:flex;flex-direction:column;gap:16px}
 .job img{max-width:55%;border:1px solid #eee;image-rendering:pixelated}
 .meta{font-size:13px;color:#444;line-height:1.8}
 </style></head><body>
-<header><h1>Simulateur Zebra ZT231</h1><div id="boutons"></div></header>
+<header><h1>Simulateur d'imprimante Zebra</h1><div id="boutons"></div></header>
 <main id="jobs"><p>En attente de demandes d'impression…</p></main>
 <script>
 const BASCULES = { horsLigne: 'Hors ligne', papier: 'Fin de papier', ruban: 'Fin de ruban', tete: 'Tête ouverte', pause: 'Pause' }
@@ -155,4 +155,4 @@ http
     }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(PAGE)
   })
-  .listen(WEB_PORT, () => console.log(`Simulateur ZT231 — page de suivi : http://localhost:${WEB_PORT}`))
+  .listen(WEB_PORT, () => console.log(`Simulateur Zebra — page de suivi : http://localhost:${WEB_PORT}`))
