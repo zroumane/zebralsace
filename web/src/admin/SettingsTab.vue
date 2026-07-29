@@ -6,8 +6,10 @@ import LogoLibrary from './LogoLibrary.vue'
 
 const message = useMessage()
 const reglages = ref<Record<string, string>>({})
+const version = ref('')
 onMounted(async () => {
   reglages.value = await api.get<Record<string, string>>('/api/settings')
+  version.value = (await api.get<{ version: string }>('/api/ping')).version
 })
 
 // n-input-number/n-slider ne savent pas lier une string : proxys numériques
@@ -21,9 +23,21 @@ const vitesse = computed(num('vitesse'))
 const offsetX = computed(num('offset_x'))
 const offsetY = computed(num('offset_y'))
 
+const nouveauMdp = ref('')
+
 async function enregistrer() {
-  await api.put('/api/settings', reglages.value)
+  const payload = { ...reglages.value }
+  if (nouveauMdp.value) payload.admin_mdp = nouveauMdp.value
+  await api.put('/api/settings', payload)
+  nouveauMdp.value = ''
+  reglages.value = await api.get<Record<string, string>>('/api/settings')
   message.success('Réglages enregistrés')
+}
+
+async function desactiverMdp() {
+  await api.put('/api/settings', { admin_mdp: '' })
+  reglages.value = await api.get<Record<string, string>>('/api/settings')
+  message.success('Mot de passe désactivé')
 }
 
 async function tester() {
@@ -103,9 +117,32 @@ async function supprimerGlobale(g: Globale) {
     </section>
 
     <section>
+      <h2>Sécurité</h2>
+      <label>
+        Mot de passe admin
+        <n-input
+          v-model:value="nouveauMdp"
+          type="password"
+          placeholder="laisser vide pour ne pas changer"
+          data-testid="mdp-nouveau"
+        />
+      </label>
+      <p class="note">
+        Une fois défini (puis Enregistrer), toute modification — modèles, réglages,
+        valeurs partagées, images — demande une connexion. Le kiosque et
+        l'impression restent libres.
+      </p>
+      <n-button v-if="reglages.admin_mdp" size="small" quaternary type="error" @click="desactiverMdp">
+        Désactiver le mot de passe
+      </n-button>
+    </section>
+
+    <section>
       <h2>Bibliothèque d'images</h2>
       <LogoLibrary mode="manage" />
     </section>
+
+    <p v-if="version" class="version">Zebralsace v{{ version }}</p>
   </div>
 </template>
 
@@ -117,4 +154,5 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-w
 .note { font-size: 12px; color: #666; margin: 0; }
 .boutons { display: flex; gap: 8px; }
 .globale { display: flex; gap: 6px; align-items: center; }
+.version { width: 100%; color: #bbb; font-size: 12px; margin: 0; }
 </style>

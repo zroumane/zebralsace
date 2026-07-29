@@ -1,6 +1,7 @@
 import express from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
+import crypto from 'node:crypto'
 import type Database from 'better-sqlite3'
 import { getSettings } from './db'
 import { getStatus } from './printer'
@@ -12,7 +13,55 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
 
   const api = express.Router()
 
-  api.get('/ping', (_req, res) => res.json({ ok: true }))
+  const VERSION = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8')).version as string
+  api.get('/ping', (_req, res) => res.json({ ok: true, version: VERSION }))
+
+  // ---- authentification admin (active seulement si un mot de passe est défini) ----
+  const sessions = new Set<string>()
+  const HASH_RE = /^[0-9a-f]{32}:[0-9a-f]{64}$/
+  const hacher = (mdp: string, sel: string) => crypto.scryptSync(mdp, sel, 32).toString('hex')
+
+  function jetonValide(req: express.Request): boolean {
+    const jeton = /(?:^|;\s*)session=([0-9a-f]+)/.exec(req.headers.cookie ?? '')?.[1]
+    return !!jeton && sessions.has(jeton)
+  }
+
+  api.get('/session', (req, res) => {
+    const requis = !!getSettings(db).admin_mdp
+    res.json({ requis, connecte: !requis || jetonValide(req) })
+  })
+
+  api.post('/login', (req, res) => {
+    const attendu = getSettings(db).admin_mdp ?? ''
+    if (!attendu) return res.json({ ok: true })
+    const [sel, hash] = attendu.split(':')
+    if (hacher(String(req.body?.mdp ?? ''), sel) !== hash) {
+      return res.status(401).json({ erreur: 'mot de passe incorrect' })
+    }
+    const jeton = crypto.randomBytes(32).toString('hex')
+    sessions.add(jeton)
+    res.setHeader('Set-Cookie', `session=${jeton}; HttpOnly; Path=/; SameSite=Strict`)
+    res.json({ ok: true })
+  })
+
+  // Mutations d'administration protégées ; lectures et impression restent
+  // libres — le kiosque fonctionne sans authentification.
+  const PROTEGEES: Array<[string, RegExp]> = [
+    ['POST', /^\/templates/],
+    ['PUT', /^\/templates/],
+    ['DELETE', /^\/templates/],
+    ['PUT', /^\/globals/],
+    ['DELETE', /^\/globals/],
+    ['PUT', /^\/settings$/],
+    ['POST', /^\/logos/],
+    ['DELETE', /^\/logos/],
+  ]
+  api.use((req, res, next) => {
+    if (!getSettings(db).admin_mdp) return next()
+    if (!PROTEGEES.some(([m, re]) => req.method === m && re.test(req.path))) return next()
+    if (jetonValide(req)) return next()
+    res.status(401).json({ erreur: 'authentification requise' })
+  })
 
   // ---- templates ----
   const templateParId = db.prepare('SELECT * FROM templates WHERE id = ?')
@@ -88,7 +137,15 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     const up = db.prepare(
       'INSERT INTO settings (cle, valeur) VALUES (?, ?) ON CONFLICT(cle) DO UPDATE SET valeur = excluded.valeur'
     )
-    for (const [cle, valeur] of Object.entries(req.body ?? {})) up.run(cle, String(valeur))
+    for (const [cle, valeur] of Object.entries(req.body ?? {})) {
+      let v = String(valeur)
+      // le mot de passe admin est stocké haché (sel:empreinte), jamais en clair
+      if (cle === 'admin_mdp' && v && !HASH_RE.test(v)) {
+        const sel = crypto.randomBytes(16).toString('hex')
+        v = `${sel}:${hacher(v, sel)}`
+      }
+      up.run(cle, v)
+    }
     res.json({ ok: true })
   })
 
