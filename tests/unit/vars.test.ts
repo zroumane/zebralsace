@@ -83,6 +83,13 @@ describe('hydrateDoc', () => {
     const doc3 = { objects: [{ type: 'Textbox', text: '{{dlc+3}}', styles: [] }] }
     expect(hydrateDoc(doc3, { dlc: 'x', date: 'y' }, BASE, true).objects).toHaveLength(0)
   })
+  it('hideDate retire les blocs contenant {{date}} ou {{date+N}}', () => {
+    const h = hydrateDoc(doc, { date: '01/02/2026', dlc: '15/02/2026' }, BASE, false, true)
+    expect(h.objects).toHaveLength(2)
+    expect(h.objects[0].text).toBe('DLC 15/02/2026')
+    const doc4 = { objects: [{ type: 'Textbox', text: '{{date+7}}', styles: [] }] }
+    expect(hydrateDoc(doc4, { dlc: 'x', date: 'y' }, BASE, false, true).objects).toHaveLength(0)
+  })
   it('ne modifie pas le doc d\'origine', () => {
     hydrateDoc(doc, { dlc: 'x', date: 'y' }, BASE, false)
     expect(doc.objects[0].text).toBe('DLC {{dlc}}')

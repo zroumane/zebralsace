@@ -63,16 +63,20 @@ export function substituteWithStyles(
 }
 
 const DLC_RE = /\{\{\s*dlc\s*(?:\+\s*\d+)?\s*\}\}/i
+const DATE_RE = /\{\{\s*date\s*(?:\+\s*\d+)?\s*\}\}/i
 
 export function hydrateDoc(
   doc: any,
   vars: Record<string, string>,
   baseDate: Date,
-  hideDlc: boolean
+  hideDlc: boolean,
+  hideDate = false
 ): any {
   const clone = structuredClone(doc)
   clone.objects = (clone.objects ?? []).filter(
-    (o: any) => !(hideDlc && typeof o.text === 'string' && DLC_RE.test(o.text))
+    (o: any) =>
+      !(hideDlc && typeof o.text === 'string' && DLC_RE.test(o.text)) &&
+      !(hideDate && typeof o.text === 'string' && DATE_RE.test(o.text))
   )
   for (const o of clone.objects) {
     if (typeof o.text === 'string') {

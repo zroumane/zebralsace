@@ -32,7 +32,9 @@ api.get<Template>(`/api/templates/${props.template.id}`).then((t) => {
     peremption.value = versIso(addDays(new Date(fabrication.value), t.dlc_jours))
 })
 
-const sansDlc = ref(false)
+// cochée = la date figure sur l'étiquette et son champ est modifiable
+const avecDate = ref(true)
+const avecDlc = ref(true)
 const quantite = ref(1)
 
 function ajouterQuantite(n: number) {
@@ -65,7 +67,8 @@ watchEffect(async () => {
       dpi: dpi.value,
       vars: computeVars(globales.value, new Date(fabrication.value), new Date(peremption.value)),
       baseDate: new Date(fabrication.value),
-      hideDlc: sansDlc.value,
+      hideDlc: !avecDlc.value,
+      hideDate: !avecDate.value,
     })
     if (jeton === rendu) apercu.value = png
   } catch (e) {
@@ -112,39 +115,35 @@ async function imprimer() {
       <div class="contenu">
         <img class="apercu" :src="apercu" alt="aperçu de l'étiquette" data-testid="apercu" />
         <div class="reglages">
-          <label>
-            Date de fabrication
-            <input v-model="fabrication" type="date" data-testid="date-fabrication" />
-          </label>
-          <label :class="{ inactif: sansDlc }">
-            Date de péremption
+          <div class="date-choix" :class="{ inactif: !avecDate }">
+            <n-checkbox v-model:checked="avecDate" data-testid="avec-date">Date de fabrication</n-checkbox>
+            <input v-model="fabrication" type="date" :disabled="!avecDate" data-testid="date-fabrication" />
+          </div>
+          <div class="date-choix" :class="{ inactif: !avecDlc }">
+            <n-checkbox v-model:checked="avecDlc" data-testid="avec-dlc">Date de péremption</n-checkbox>
             <input
               v-model="peremption"
               type="date"
-              :disabled="sansDlc"
+              :disabled="!avecDlc"
               data-testid="date-peremption"
               @input="peremptionTouchee = true"
             />
-          </label>
-          <n-checkbox v-model:checked="sansDlc" data-testid="sans-dlc">
-            Sans date de péremption
-          </n-checkbox>
+          </div>
 
           <div class="quantite">
-            <n-button size="large" secondary :disabled="quantite <= 1" @click="ajouterQuantite(-10)">−10</n-button>
-            <n-button size="large" secondary :disabled="quantite <= 1" @click="ajouterQuantite(-5)">−5</n-button>
-            <n-button size="large" secondary :disabled="quantite <= 1" @click="ajouterQuantite(-1)">−</n-button>
+            <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-10)">−10</n-button>
+            <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-5)">−5</n-button>
+            <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-1)">−</n-button>
             <n-input-number
               v-model:value="quantite"
-              size="large"
               :min="1"
               :max="99999999"
               :show-button="false"
               data-testid="quantite"
             />
-            <n-button size="large" secondary @click="ajouterQuantite(1)">+</n-button>
-            <n-button size="large" secondary @click="ajouterQuantite(5)">+5</n-button>
-            <n-button size="large" secondary @click="ajouterQuantite(10)">+10</n-button>
+            <n-button secondary @click="ajouterQuantite(1)">+</n-button>
+            <n-button secondary @click="ajouterQuantite(5)">+5</n-button>
+            <n-button secondary @click="ajouterQuantite(10)">+10</n-button>
           </div>
 
           <n-button
@@ -174,11 +173,16 @@ async function imprimer() {
 .fermer:active { color: #c1121f; }
 .contenu { display: flex; gap: 32px; align-items: flex-start; height: 100%; }
 .apercu { flex: 1; min-width: 0; border: 1px solid #e5e5e5; max-height: calc(100vh - 140px); object-fit: contain; }
-.reglages { width: 280px; display: flex; flex-direction: column; gap: 16px; }
-label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; }
-label input { font-size: 18px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
-.inactif { opacity: 0.45; }
-.quantite { display: flex; flex-wrap: wrap; gap: 8px; }
-.quantite :deep(.n-input-number) { flex: 1; min-width: 90px; }
+.reglages { width: 440px; display: flex; flex-direction: column; gap: 16px; }
+.date-choix { display: flex; flex-direction: column; gap: 6px; }
+.date-choix :deep(.n-checkbox__label) { font-weight: 700; }
+.date-choix input { font-size: 18px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+.inactif input { opacity: 0.45; }
+/* − à gauche, + à droite, le nombre en gros au centre */
+.quantite { display: flex; gap: 6px; align-items: stretch; }
+.quantite :deep(.n-button) { --n-height: 52px !important; height: 52px; }
+.quantite :deep(.n-input-number) { flex: 1; min-width: 110px; }
+.quantite :deep(.n-input-number .n-input) { --n-height: 52px !important; --n-font-size: 28px !important; }
+.quantite :deep(.n-input-number input) { text-align: center; font-weight: 700; }
 .bloque { color: #780000; font-weight: 700; margin: 0; }
 </style>
