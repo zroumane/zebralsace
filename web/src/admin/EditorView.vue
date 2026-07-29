@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { Canvas, FabricImage, Line, Rect, Textbox } from 'fabric'
 import { useMessage } from 'naive-ui'
 import { api, type Globale, type Logo, type Template } from '../api'
@@ -10,6 +10,24 @@ import LogoLibrary from './LogoLibrary.vue'
 
 const route = useRoute()
 const message = useMessage()
+
+// --- modifications non enregistrées ---
+const modifie = ref(false)
+const pret = ref(false) // vrai une fois le chargement initial terminé
+
+function avantFermeture(e: BeforeUnloadEvent) {
+  if (!modifie.value) return
+  e.preventDefault()
+  e.returnValue = '' // requis par Chrome pour afficher l'alerte native
+}
+window.addEventListener('beforeunload', avantFermeture)
+onBeforeUnmount(() => window.removeEventListener('beforeunload', avantFermeture))
+
+onBeforeRouteLeave(() => {
+  // confirm natif : cohérent avec l'alerte du navigateur à la fermeture d'onglet
+  if (!modifie.value) return true
+  return window.confirm('Modifications non enregistrées — quitter sans enregistrer ?')
+})
 
 const template = ref<Template | null>(null)
 const canvasEl = ref<HTMLCanvasElement>()
@@ -167,8 +185,29 @@ onMounted(async () => {
   c.on('selection:created', () => (selection.value = c.getActiveObject()))
   c.on('selection:updated', () => (selection.value = c.getActiveObject()))
   c.on('selection:cleared', () => (selection.value = null))
+
+  // traque les modifications (la grille, jamais sérialisée, ne compte pas)
+  const marquer = (e?: { target?: { estGrille?: boolean } }) => {
+    if (e?.target?.estGrille) return
+    modifie.value = true
+  }
+  c.on('object:added', marquer)
+  c.on('object:removed', marquer)
+  c.on('object:modified', marquer)
+  c.on('text:changed', marquer)
+
   c.renderAll()
+  pret.value = true
 })
+
+// les propriétés du modèle comptent aussi comme modifications (pas le zoom)
+watch(
+  () =>
+    template.value && [template.value.nom, template.value.largeur_mm, template.value.hauteur_mm, template.value.dlc_jours],
+  () => {
+    if (pret.value) modifie.value = true
+  }
+)
 
 watch([zoom, () => template.value?.largeur_mm, () => template.value?.hauteur_mm], () => {
   if (canvas.value && template.value) {
@@ -263,6 +302,7 @@ async function enregistrer() {
       doc_json: JSON.stringify(canvas.value!.toJSON()),
       vignette_png: await rendreCourant(0.3),
     })
+    modifie.value = false
     message.success('Modèle enregistré')
   } catch (e) {
     message.error((e as Error).message)
