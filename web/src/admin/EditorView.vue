@@ -669,7 +669,14 @@ async function enregistrer() {
   <div v-if="template" class="editeur">
     <header>
       <BoutonRetour to="/admin/modeles" libelle="Retour" />
-      <n-button type="primary" size="large" strong data-testid="enregistrer" @click="enregistrer">
+      <n-button
+        type="primary"
+        size="large"
+        strong
+        data-testid="enregistrer"
+        :disabled="!modifie && !jamaisEnregistre"
+        @click="enregistrer"
+      >
         Enregistrer
       </n-button>
       <n-input v-model:value="template.nom" data-testid="nom-template" style="flex: 1; min-width: 220px; max-width: 420px" />
