@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import { api, type PrinterStatus } from '../api'
+import { reglagesModifies } from './etatModifs'
 
 const message = useMessage()
 const reglages = ref<Record<string, string>>({})
 const version = ref('')
+let instantane = ''
+
 onMounted(async () => {
   reglages.value = await api.get<Record<string, string>>('/api/settings')
+  instantane = JSON.stringify(reglages.value)
   version.value = (await api.get<{ version: string }>('/api/ping')).version
 })
 
@@ -24,18 +28,43 @@ const offsetY = computed(num('offset_y'))
 
 const nouveauMdp = ref('')
 
+// --- modifications non enregistrées (même logique que l'éditeur) ---
+watch(
+  [reglages, nouveauMdp],
+  () => {
+    reglagesModifies.value =
+      (instantane !== '' && JSON.stringify(reglages.value) !== instantane) || !!nouveauMdp.value
+  },
+  { deep: true }
+)
+
+function avantFermeture(e: BeforeUnloadEvent) {
+  if (!reglagesModifies.value) return
+  e.preventDefault()
+  e.returnValue = ''
+}
+window.addEventListener('beforeunload', avantFermeture)
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', avantFermeture)
+  reglagesModifies.value = false // l'onglet se ferme : le garde a déjà eu lieu
+})
+
 async function enregistrer() {
   const payload = { ...reglages.value }
   if (nouveauMdp.value) payload.admin_mdp = nouveauMdp.value
   await api.put('/api/settings', payload)
   nouveauMdp.value = ''
   reglages.value = await api.get<Record<string, string>>('/api/settings')
+  instantane = JSON.stringify(reglages.value)
+  reglagesModifies.value = false
   message.success('Réglages enregistrés')
 }
 
 async function desactiverMdp() {
   await api.put('/api/settings', { admin_mdp: '' })
   reglages.value = await api.get<Record<string, string>>('/api/settings')
+  instantane = JSON.stringify(reglages.value)
+  reglagesModifies.value = !!nouveauMdp.value
   message.success('Mot de passe désactivé')
 }
 
@@ -43,32 +72,33 @@ async function tester() {
   const s = await api.get<PrinterStatus>('/api/status')
   s.pret ? message.success(s.message) : message.error(s.message)
 }
-
 </script>
 
 <template>
   <div class="reglages" v-if="Object.keys(reglages).length">
-    <section>
+    <section class="imprimante">
       <h2>Imprimante</h2>
-      <label>Adresse IP <n-input v-model:value="reglages.printer_ip" data-testid="ip" placeholder="192.168.1.50" /></label>
-      <label>Port <n-input v-model:value="reglages.printer_port" /></label>
-      <label>
-        Résolution
-        <n-select
-          v-model:value="reglages.dpi"
-          :options="[{ label: '203 dpi', value: '203' }, { label: '300 dpi', value: '300' }, { label: '600 dpi', value: '600' }]"
-        />
-      </label>
+      <div class="deux">
+        <label>Adresse IP <n-input v-model:value="reglages.printer_ip" data-testid="ip" placeholder="192.168.1.50" /></label>
+        <label>Port <n-input v-model:value="reglages.printer_port" /></label>
+        <label>
+          Résolution
+          <n-select
+            v-model:value="reglages.dpi"
+            :options="[{ label: '203 dpi', value: '203' }, { label: '300 dpi', value: '300' }, { label: '600 dpi', value: '600' }]"
+          />
+        </label>
+        <label>Laize — largeur max (mm) <n-input-number v-model:value="laize" :min="10" :max="300" /></label>
+        <label>Vitesse (2–12) <n-input-number v-model:value="vitesse" :min="2" :max="12" /></label>
+        <label>Décalage horizontal (points) <n-input-number v-model:value="offsetX" :min="-120" :max="120" /></label>
+        <label>Décalage vertical (points) <n-input-number v-model:value="offsetY" :min="-120" :max="120" /></label>
+        <label class="large">Contraste (0–30) <n-slider v-model:value="contraste" :min="0" :max="30" /></label>
+      </div>
       <p class="note">
         ⚠ La résolution se choisit à l'installation, selon l'imprimante. La changer
         ensuite impose de réajuster les modèles dans l'éditeur et de réimporter
         les logos (optimisés à la résolution active au moment de l'import).
       </p>
-      <label>Laize — largeur max d'impression (mm) <n-input-number v-model:value="laize" :min="10" :max="300" /></label>
-      <label>Contraste (0–30) <n-slider v-model:value="contraste" :min="0" :max="30" /></label>
-      <label>Vitesse (2–12) <n-input-number v-model:value="vitesse" :min="2" :max="12" /></label>
-      <label>Décalage horizontal (points) <n-input-number v-model:value="offsetX" :min="-120" :max="120" /></label>
-      <label>Décalage vertical (points) <n-input-number v-model:value="offsetY" :min="-120" :max="120" /></label>
       <div class="boutons">
         <n-button type="primary" data-testid="enregistrer-reglages" @click="enregistrer">Enregistrer</n-button>
         <n-button data-testid="tester-connexion" @click="tester">Tester la connexion</n-button>
@@ -101,8 +131,11 @@ async function tester() {
 </template>
 
 <style scoped>
-.reglages { display: flex; flex-wrap: wrap; gap: 48px; padding: 16px 0; }
-section { width: 340px; display: flex; flex-direction: column; gap: 10px; }
+.reglages { display: flex; flex-wrap: wrap; gap: 32px 48px; padding: 16px 0; align-items: flex-start; }
+section { flex: 1 1 340px; max-width: 480px; display: flex; flex-direction: column; gap: 12px; }
+section.imprimante { flex: 2 1 480px; max-width: 720px; }
+.deux { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+.deux .large { grid-column: 1 / -1; }
 h2 { font-size: 16px; color: #780000; margin: 0; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; }
 .note { font-size: 12px; color: #666; margin: 0; }

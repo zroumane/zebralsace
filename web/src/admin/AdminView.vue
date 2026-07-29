@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import { reglagesModifies } from './etatModifs'
 import { useMessage } from 'naive-ui'
 import { api } from '../api'
 import BoutonRetour from '../BoutonRetour.vue'
@@ -18,12 +19,23 @@ const router = useRouter()
 
 // chaque onglet a sa propre URL : /admin/modeles, /admin/medias, /admin/variables…
 const ONGLETS = ['modeles', 'medias', 'variables', 'historique', 'erreurs', 'reglages']
+
+// garde-fou réglages : vaut pour le changement d'onglet ET la navigation
+function sortieReglagesConfirmee(): boolean {
+  if (!reglagesModifies.value) return true
+  const ok = window.confirm('Réglages non enregistrés — quitter sans enregistrer ?')
+  if (ok) reglagesModifies.value = false
+  return ok
+}
+onBeforeRouteLeave(sortieReglagesConfirmee)
+
 const onglet = computed({
   get: () => {
     const o = String(route.params.onglet ?? '')
     return ONGLETS.includes(o) ? o : 'modeles'
   },
   set: (o: string) => {
+    if (!sortieReglagesConfirmee()) return
     void router.replace(`/admin/${o}`)
   },
 })

@@ -20,3 +20,23 @@ test('réglages et valeurs partagées persistent', async ({ page, request }) => 
   await page.getByTestId('ajouter-globale').click()
   await expect(page.getByText('{{adresse}}')).toBeVisible()
 })
+
+test('garde-fou réglages : alerte au changement d’onglet sans enregistrer', async ({ page }) => {
+  await page.goto('/admin/reglages')
+  await page.getByTestId('ip').locator('input').fill('10.0.0.42')
+
+  // refuser = rester sur l'onglet
+  let confirmVu = false
+  page.once('dialog', (d) => {
+    confirmVu = true
+    void d.dismiss()
+  })
+  await page.getByText('Historique').click()
+  await expect(page).toHaveURL(/\/admin\/reglages$/)
+  expect(confirmVu).toBe(true)
+
+  // accepter = quitter (les modifications locales sont abandonnées)
+  page.once('dialog', (d) => void d.accept())
+  await page.getByText('Historique').click()
+  await expect(page).toHaveURL(/\/admin\/historique$/)
+})
