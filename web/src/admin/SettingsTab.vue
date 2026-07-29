@@ -16,6 +16,7 @@ const num = (cle: string) => ({
   set: (v: number | null) => (reglages.value[cle] = String(v ?? 0)),
 })
 const contraste = computed(num('contraste'))
+const laize = computed(num('laize_mm'))
 const vitesse = computed(num('vitesse'))
 const offsetX = computed(num('offset_x'))
 const offsetY = computed(num('offset_y'))
@@ -65,10 +66,11 @@ async function supprimerGlobale(g: Globale) {
         Résolution
         <n-select
           v-model:value="reglages.dpi"
-          :options="[{ label: '203 dpi', value: '203' }, { label: '300 dpi', value: '300' }]"
+          :options="[{ label: '203 dpi', value: '203' }, { label: '300 dpi', value: '300' }, { label: '600 dpi', value: '600' }]"
         />
       </label>
       <p class="note">⚠ Changer la résolution après avoir créé des modèles impose de les réajuster dans l'éditeur.</p>
+      <label>Laize — largeur max d'impression (mm) <n-input-number v-model:value="laize" :min="10" :max="300" /></label>
       <label>Contraste (0–30) <n-slider v-model:value="contraste" :min="0" :max="30" /></label>
       <label>Vitesse (2–12) <n-input-number v-model:value="vitesse" :min="2" :max="12" /></label>
       <label>Décalage horizontal (points) <n-input-number v-model:value="offsetX" :min="-120" :max="120" /></label>

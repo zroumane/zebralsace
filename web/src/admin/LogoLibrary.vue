@@ -12,9 +12,13 @@ const message = useMessage()
 const logos = ref<Logo[]>([])
 const type = ref<'logo' | 'code-barres'>('logo')
 
-// résolution configurée : un logo optimisé à 203 dpi imprimerait flou sur la ZT231 300 dpi
+// résolution et laize configurées : un logo optimisé trop petit imprimerait flou
 const dpi = ref(300)
-api.get<Record<string, string>>('/api/settings').then((s) => (dpi.value = Number(s.dpi)))
+const laize = ref(104)
+api.get<Record<string, string>>('/api/settings').then((s) => {
+  dpi.value = Number(s.dpi)
+  laize.value = Number(s.laize_mm ?? 104)
+})
 
 async function charger() {
   logos.value = await api.get<Logo[]>('/api/logos')
@@ -25,9 +29,9 @@ async function surFichier(e: Event) {
   const cible = e.target as HTMLInputElement
   const fichier = cible.files?.[0]
   if (!fichier) return
-  // 104 mm = laize max de la ZT231 ; un code-barres n'est jamais redimensionné
+  // laize configurée dans les réglages ; un code-barres n'est jamais redimensionné
   const png = await optimizeImage(fichier, {
-    maxWidthPx: mmToPx(104, dpi.value),
+    maxWidthPx: mmToPx(laize.value, dpi.value),
     resize: type.value !== 'code-barres',
   })
   await api.post('/api/logos', { nom: fichier.name.replace(/\.\w+$/, ''), type: type.value, png })

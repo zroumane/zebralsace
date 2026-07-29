@@ -17,6 +17,7 @@ const canvas = shallowRef<Canvas>()
 const selection = shallowRef<any>(null)
 const zoom = ref(1)
 const dpi = ref(300)
+const laize = ref(104)
 
 const labelPx = () => ({
   w: mmToPx(template.value!.largeur_mm, dpi.value),
@@ -139,7 +140,9 @@ function insererVariable(v: string) {
 
 onMounted(async () => {
   template.value = await api.get<Template>(`/api/templates/${route.params.id}`)
-  dpi.value = Number((await api.get<Record<string, string>>('/api/settings')).dpi)
+  const reglages = await api.get<Record<string, string>>('/api/settings')
+  dpi.value = Number(reglages.dpi)
+  laize.value = Number(reglages.laize_mm ?? 104)
   await Promise.all(['400 16px Roboto', '700 16px Roboto'].map((f) => document.fonts.load(f)))
 
   const c = new Canvas(canvasEl.value!, { backgroundColor: '#ffffff', preserveObjectStacking: true })
@@ -266,7 +269,7 @@ async function enregistrer() {
     <header>
       <router-link to="/admin">← Retour</router-link>
       <n-input v-model:value="template.nom" data-testid="nom-template" style="max-width: 240px" />
-      <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="104" size="small" /></label>
+      <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="laize" size="small" /></label>
       <label>Hauteur (mm) <n-input-number v-model:value="template.hauteur_mm" :min="10" :max="300" size="small" /></label>
       <label>DLC (jours) <n-input-number v-model:value="template.dlc_jours" :min="0" :max="365" size="small" /></label>
       <n-select
