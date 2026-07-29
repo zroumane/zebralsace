@@ -195,6 +195,7 @@ function protegerObjet(o: any) {
   if (o.text !== undefined) {
     // il ne reste que ml/mr (largeur de reformatage, sans étirer) et la rotation
     o.setControlsVisibility({ tl: false, tr: false, bl: false, br: false, mt: false, mb: false })
+    o.splitByGrapheme = true // les anciens textes adoptent la coupe à la bordure
   } else {
     o.setControlsVisibility({ ml: false, mr: false, mt: false, mb: false })
     o.lockScalingFlip = true
@@ -210,6 +211,9 @@ function ajouterTexte() {
     fontFamily: 'Roboto',
     fontSize: mmToPx(3, dpi.value),
     fill: '#000000',
+    // retour à la ligne forcé à la bordure du bloc, même au milieu d'un mot
+    // trop long (sérialisé : l'impression coupe exactement comme l'éditeur)
+    splitByGrapheme: true,
   })
   protegerObjet(t)
   c.add(t)
