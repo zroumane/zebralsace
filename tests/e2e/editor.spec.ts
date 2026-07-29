@@ -53,10 +53,10 @@ test('tableau nutritionnel : insertion, persistance, réédition pré-remplie', 
 
   await page.goto(`/admin/templates/${id}`)
   await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
+  // l'insertion sélectionne le tableau : ses valeurs s'éditent dans le panneau
   await page.getByTestId('ajouter-tableau').click()
   await page.getByTestId('nut-energie').locator('input').fill('217,57 kcal / 912,57 kJ')
   await page.getByTestId('nut-lipides').locator('input').fill('10,33 g')
-  await page.getByTestId('valider-tableau').click()
   await page.getByTestId('enregistrer').click()
   await expect(page.getByText('Modèle enregistré')).toBeVisible()
 
@@ -64,12 +64,10 @@ test('tableau nutritionnel : insertion, persistance, réédition pré-remplie', 
   expect(t.doc_json).toContain('tableauNutritionnel')
   expect(t.doc_json).toContain('217,57 kcal')
 
-  // réédition : sélectionner le tableau sur le canvas → bouton pré-rempli
+  // réédition : sélectionner le tableau sur le canvas → panneau pré-rempli
   await page.locator('.zone-canvas canvas').last().click({ position: { x: 200, y: 120 } })
-  await page.getByTestId('modifier-tableau').click()
   await expect(page.getByTestId('nut-energie').locator('input')).toHaveValue('217,57 kcal / 912,57 kJ')
   await page.getByTestId('nut-energie').locator('input').fill('300 kcal / 1255 kJ')
-  await page.getByTestId('valider-tableau').click()
   await page.getByTestId('enregistrer').click()
   // poll : le toast du 1er enregistrement peut encore être affiché, on attend l'API
   await expect

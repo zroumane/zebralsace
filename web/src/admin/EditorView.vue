@@ -537,10 +537,6 @@ const NUT_DEFAUT = (): ValeursNutritionnelles => ({
   sel: '',
 })
 
-const tableauOuvert = ref(false)
-// shallowRef obligatoire : une ref profonde enrobe l'objet fabric dans un Proxy
-// et canvas.remove(proxy) ne retrouve pas l'instance originale
-const tableauEnEdition = shallowRef<any>(null)
 const valNut = ref<ValeursNutritionnelles>(NUT_DEFAUT())
 
 function construireTableau(v: ValeursNutritionnelles): Group {
@@ -601,34 +597,43 @@ function construireTableau(v: ValeursNutritionnelles): Group {
   return g
 }
 
-function ouvrirTableau() {
-  tableauEnEdition.value = null
-  valNut.value = NUT_DEFAUT()
-  tableauOuvert.value = true
-}
-
-function ouvrirEditionTableau() {
-  const o: any = selection.value
-  if (!o?.tableauNutritionnel) return
-  tableauEnEdition.value = o
-  valNut.value = { ...NUT_DEFAUT(), ...o.tableauNutritionnel }
-  tableauOuvert.value = true
-}
-
-function validerTableau() {
+function ajouterTableau() {
   const c = canvas.value!
-  const g = construireTableau(valNut.value)
-  const ancien: any = tableauEnEdition.value
-  if (ancien) {
-    g.set({ left: ancien.left, top: ancien.top, scaleX: ancien.scaleX, scaleY: ancien.scaleY, angle: ancien.angle })
-    c.remove(ancien)
-  }
+  const g = construireTableau(NUT_DEFAUT())
   c.add(g)
   c.setActiveObject(g)
   c.renderAll()
-  tableauOuvert.value = false
-  tableauEnEdition.value = null
 }
+
+// Édition dans le panneau : chaque frappe reconstruit le groupe en place.
+// La sélection d'un tableau recharge valNut ; le drapeau évite que ce
+// rechargement (même contenu) ne redéclenche une reconstruction.
+let nutEnChargement = false
+watch(selection, (s: any) => {
+  if (s?.tableauNutritionnel) {
+    nutEnChargement = true
+    valNut.value = { ...NUT_DEFAUT(), ...s.tableauNutritionnel }
+  }
+})
+watch(
+  valNut,
+  () => {
+    if (nutEnChargement) {
+      nutEnChargement = false
+      return
+    }
+    const c = canvas.value!
+    const ancien: any = selection.value
+    if (!ancien?.tableauNutritionnel) return
+    const g = construireTableau(valNut.value)
+    g.set({ left: ancien.left, top: ancien.top, scaleX: ancien.scaleX, scaleY: ancien.scaleY, angle: ancien.angle })
+    c.remove(ancien)
+    c.add(g)
+    c.setActiveObject(g)
+    c.renderAll()
+  },
+  { deep: true }
+)
 
 const apercuJour = ref<string | null>(null)
 async function apercuValeursDuJour() {
@@ -711,7 +716,7 @@ async function enregistrer() {
         <n-button data-testid="ajouter-texte" @click="ajouterTexte">+ Texte</n-button>
         <n-button @click="ajouterCadre">+ Cadre</n-button>
         <n-button data-testid="ajouter-rectangle" @click="ajouterRectanglePlein">+ Rectangle</n-button>
-        <n-button data-testid="ajouter-tableau" @click="ouvrirTableau">+ Tableau nutritionnel</n-button>
+        <n-button data-testid="ajouter-tableau" @click="ajouterTableau">+ Tableau nutritionnel</n-button>
         <b>Médias</b>
         <LogoLibrary @pick="placerImage" />
       </div>
@@ -763,9 +768,11 @@ async function enregistrer() {
 
         <template v-else-if="selection && selection.tableauNutritionnel">
           <b>Tableau nutritionnel</b>
-          <n-button size="small" data-testid="modifier-tableau" @click="ouvrirEditionTableau">
-            Modifier les valeurs
-          </n-button>
+          <label class="ligne-nut">Titre <n-input v-model:value="valNut.titre" size="small" data-testid="nut-titre" /></label>
+          <label v-for="l in LIGNES_NUT" :key="l.cle" class="ligne-nut">
+            {{ l.label }}
+            <n-input v-model:value="valNut[l.cle]" size="small" :data-testid="`nut-${l.cle}`" />
+          </label>
           <p class="astuce">Les lignes laissées vides ne sont pas affichées.</p>
         </template>
 
@@ -806,32 +813,6 @@ async function enregistrer() {
       </div>
     </div>
 
-    <n-modal :show="tableauOuvert" @update:show="tableauOuvert = false">
-      <n-card
-        :title="tableauEnEdition ? 'Modifier le tableau nutritionnel' : 'Tableau nutritionnel'"
-        style="max-width: 480px"
-        closable
-        @close="tableauOuvert = false"
-      >
-        <div class="form-tableau">
-          <label>Titre <n-input v-model:value="valNut.titre" data-testid="nut-titre" /></label>
-          <label>Énergie <n-input v-model:value="valNut.energie" data-testid="nut-energie" placeholder="ex. 217,57 kcal / 912,57 kJ" /></label>
-          <label>Lipides <n-input v-model:value="valNut.lipides" data-testid="nut-lipides" placeholder="ex. 10,33 g" /></label>
-          <label>dont acides gras saturés <n-input v-model:value="valNut.satures" data-testid="nut-satures" placeholder="ex. 3,76 g" /></label>
-          <label>Glucides <n-input v-model:value="valNut.glucides" data-testid="nut-glucides" placeholder="ex. 5,13 g" /></label>
-          <label>dont sucres <n-input v-model:value="valNut.sucres" data-testid="nut-sucres" placeholder="ex. 3,09 g" /></label>
-          <label>Protéines <n-input v-model:value="valNut.proteines" data-testid="nut-proteines" placeholder="ex. 7,86 g" /></label>
-          <label>Sel <n-input v-model:value="valNut.sel" data-testid="nut-sel" placeholder="ex. 1,48 g" /></label>
-          <p class="astuce">Une ligne laissée vide n'apparaît pas dans le tableau.</p>
-        </div>
-        <template #footer>
-          <n-button type="primary" data-testid="valider-tableau" @click="validerTableau">
-            {{ tableauEnEdition ? 'Appliquer' : 'Insérer' }}
-          </n-button>
-        </template>
-      </n-card>
-    </n-modal>
-
     <n-modal :show="!!apercuJour" @update:show="apercuJour = null">
       <n-card title="Aperçu" style="max-width: 900px" closable @close="apercuJour = null">
         <img v-if="apercuJour" :src="apercuJour" alt="aperçu" style="width: 100%; border: 1px solid #e5e5e5" />
@@ -864,8 +845,7 @@ header label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .props { width: 260px; padding: 12px; border-left: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .astuce { font-size: 12px; color: #999; margin: 0; }
 .libelle-couleur { font-size: 13px; font-weight: 700; }
-.form-tableau { display: flex; flex-direction: column; gap: 10px; }
-.form-tableau label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; }
+.ligne-nut { display: flex; flex-direction: column; gap: 2px; font-size: 12px; font-weight: 700; }
 .pastille { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 6px; }
 .pastille.noire { background: #000; }
 .pastille.blanche { background: #fff; border: 1px solid #ccc; }
