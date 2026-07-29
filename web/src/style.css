@@ -1,0 +1,9 @@
+body {
+  margin: 0;
+  background: #fff;
+  color: #1c1c1c;
+  font-family: 'Roboto', sans-serif;
+  -webkit-user-select: none; /* kiosque tactile */
+  user-select: none;
+}
+input, textarea { -webkit-user-select: text; user-select: text; }

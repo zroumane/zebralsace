@@ -1,0 +1,64 @@
+import Database from 'better-sqlite3'
+import fs from 'node:fs'
+import path from 'node:path'
+
+export const DEFAULT_SETTINGS: Record<string, string> = {
+  printer_ip: '',
+  printer_port: '9100',
+  dpi: '300',
+  contraste: '15',
+  vitesse: '4',
+  offset_x: '0',
+  offset_y: '0',
+}
+
+const SCHEMA = `
+CREATE TABLE IF NOT EXISTS templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nom TEXT NOT NULL,
+  largeur_mm REAL NOT NULL DEFAULT 100,
+  hauteur_mm REAL NOT NULL DEFAULT 50,
+  dlc_jours INTEGER NOT NULL DEFAULT 7,
+  doc_json TEXT NOT NULL DEFAULT '{"objects":[]}',
+  vignette_png TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+CREATE TABLE IF NOT EXISTS globals (
+  cle TEXT PRIMARY KEY,
+  valeur TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS logos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nom TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'logo' CHECK (type IN ('logo', 'code-barres')),
+  chemin_fichier TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS print_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date_heure TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+  template_nom TEXT NOT NULL,
+  quantite INTEGER NOT NULL,
+  statut TEXT NOT NULL CHECK (statut IN ('ok', 'erreur')),
+  erreur_message TEXT
+);
+CREATE TABLE IF NOT EXISTS settings (
+  cle TEXT PRIMARY KEY,
+  valeur TEXT NOT NULL
+);
+`
+
+export function initDb(dataDir: string): Database.Database {
+  fs.mkdirSync(path.join(dataDir, 'logos'), { recursive: true })
+  const db = new Database(path.join(dataDir, 'zebra.db'))
+  db.pragma('journal_mode = WAL')
+  db.exec(SCHEMA)
+  const ins = db.prepare('INSERT OR IGNORE INTO settings (cle, valeur) VALUES (?, ?)')
+  for (const [cle, valeur] of Object.entries(DEFAULT_SETTINGS)) ins.run(cle, valeur)
+  return db
+}
+
+export function getSettings(db: Database.Database): Record<string, string> {
+  const rows = db.prepare('SELECT cle, valeur FROM settings').all() as { cle: string; valeur: string }[]
+  return Object.fromEntries(rows.map((r) => [r.cle, r.valeur]))
+}

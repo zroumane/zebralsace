@@ -1,0 +1,25 @@
+{
+  "objects": [
+    {
+      "type": "Textbox",
+      "left": 24,
+      "top": 24,
+      "width": 560,
+      "text": "Quiche lorraine\nFabriqué le {{date}} — À consommer jusqu'au {{dlc}}",
+      "fontFamily": "Roboto",
+      "fontSize": 32,
+      "fill": "#000000",
+      "styles": [{ "start": 0, "end": 15, "style": { "fontWeight": "700" } }]
+    },
+    {
+      "type": "Rect",
+      "left": 24,
+      "top": 160,
+      "width": 300,
+      "height": 120,
+      "fill": "transparent",
+      "stroke": "#000000",
+      "strokeWidth": 3
+    }
+  ]
+}
