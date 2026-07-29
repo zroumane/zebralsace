@@ -272,7 +272,7 @@ const alignement = ref('left')
 const couleurTexte = ref('#000000')
 const couleurForme = ref('#000000')
 const rempli = ref(true)
-// arrondi 0..10 par pas de 0,5 mm (0 = coins carrés), bordure 1..10 par pas de 0,2 mm
+// arrondi 0..10 par pas de 0,5 mm (0 = coins carrés), bordure 1..10 par pas de 0,1 mm
 const arrondi = ref(4)
 const bordure = ref(2)
 const niveau = (n: number, min = 1) => Math.min(10, Math.max(min, n))
@@ -287,7 +287,7 @@ watch(selection, (s: any) => {
     if (s.rx !== undefined) {
       rempli.value = !!(s.fill && s.fill !== 'transparent')
       arrondi.value = niveau(Math.round(s.rx / mmToPx(0.5, dpi.value)), 0)
-      if (s.strokeWidth) bordure.value = niveau(Math.round(s.strokeWidth / mmToPx(0.2, dpi.value)))
+      if (s.strokeWidth) bordure.value = niveau(Math.round(s.strokeWidth / mmToPx(0.1, dpi.value)))
     }
   }
 })
@@ -533,7 +533,7 @@ function appliquerRempli(v: boolean) {
   if (!o || o.rx === undefined) return
   const couleur = couleurForme.value || '#000000'
   if (v) o.set({ fill: couleur, stroke: null, strokeWidth: 0 })
-  else o.set({ fill: 'transparent', stroke: couleur, strokeWidth: mmToPx(bordure.value * 0.2, dpi.value) })
+  else o.set({ fill: 'transparent', stroke: couleur, strokeWidth: mmToPx(bordure.value * 0.1, dpi.value) })
   rempli.value = v
   o.dirty = true
   toucher(o)
@@ -542,7 +542,7 @@ function appliquerRempli(v: boolean) {
 function appliquerEpaisseur(n: number | null) {
   const o: any = selection.value
   if (!o || o.rx === undefined || !n) return
-  o.set('strokeWidth', mmToPx(n * 0.2, dpi.value))
+  o.set('strokeWidth', mmToPx(n * 0.1, dpi.value))
   o.dirty = true
   toucher(o)
 }
