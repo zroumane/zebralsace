@@ -38,7 +38,7 @@ const sections = computed(() => {
     <header class="entete">
       <h1>Étiquettes</h1>
       <StatusBadge />
-      <router-link class="lien-admin" to="/admin">Administration</router-link>
+      <router-link class="lien-admin" to="/admin/modeles">Administration</router-link>
     </header>
 
     <div v-if="statut.file?.length" class="file" data-testid="file-impression">
