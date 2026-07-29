@@ -80,10 +80,6 @@ async function supprimer(g: Globale) {
           <td class="col-variable"><code v-text="'{{dlc}}'" /></td>
           <td>Date du jour + durée DLC définie sur le modèle</td>
         </tr>
-        <tr>
-          <td class="col-variable"><code v-text="'{{date+N}}'" /></td>
-          <td>Date du jour + N jours</td>
-        </tr>
       </tbody>
     </table>
   </div>
