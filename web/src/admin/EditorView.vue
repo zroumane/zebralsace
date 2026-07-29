@@ -6,6 +6,7 @@ import { useMessage } from 'naive-ui'
 import { api, type Globale, type Logo, type Template } from '../api'
 import { mmToPx, renderLabel } from '../render'
 import { addDays, computeVars } from '../vars'
+import BoutonRetour from '../BoutonRetour.vue'
 import LogoLibrary from './LogoLibrary.vue'
 
 const route = useRoute()
@@ -320,7 +321,7 @@ async function enregistrer() {
 <template>
   <div v-if="template" class="editeur">
     <header>
-      <router-link to="/admin">← Retour</router-link>
+      <BoutonRetour to="/admin" libelle="Retour" />
       <n-input v-model:value="template.nom" data-testid="nom-template" style="max-width: 240px" />
       <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="laize" size="small" /></label>
       <label>Hauteur (mm) <n-input-number v-model:value="template.hauteur_mm" :min="10" :max="300" size="small" /></label>

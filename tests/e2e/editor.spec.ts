@@ -28,13 +28,13 @@ test('garde-fou : avertit avant de quitter avec des modifications non enregistr�
     confirmVu = true
     void d.dismiss()
   })
-  await page.getByText('← Retour').click()
+  await page.getByTestId('retour').click()
   await expect(page).toHaveURL(new RegExp(`/admin/templates/${id}`))
   expect(confirmVu).toBe(true)
 
   // après enregistrement, la sortie est libre
   await page.getByTestId('enregistrer').click()
   await expect(page.getByText('Modèle enregistré')).toBeVisible()
-  await page.getByText('← Retour').click()
+  await page.getByTestId('retour').click()
   await expect(page).toHaveURL(/\/admin$/)
 })
