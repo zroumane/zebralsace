@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Simulateur Zebra</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; background: #fff; color: #1c1c1c; }
+    header { border-bottom: 3px solid #c1121f; padding: 12px 24px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    h1 { font-size: 18px; margin: 0; flex: 1; }
+    button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font: inherit; }
+    button.actif { background: #c1121f; color: #fff; border-color: #780000; }
+    main { padding: 16px 24px; display: flex; flex-direction: column; gap: 16px; }
+    .job { border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px; display: flex; gap: 16px; align-items: flex-start; }
+    .job img { max-width: 55%; border: 1px solid #eee; image-rendering: pixelated; }
+    .meta { font-size: 13px; color: #444; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulateur d'imprimante Zebra</h1>
+    <div id="boutons"></div>
+  </header>
+  <main id="jobs"><p>En attente de demandes d'impression…</p></main>
+  <script src="/page.js"></script>
+</body>
+</html>

@@ -1,5 +1,10 @@
+// Simulateur d'imprimante Zebra : accepte le ZPL sur le port 9100 (statut ~HS,
+// pannes simulables) et décode les jobs ^GFA reçus pour les afficher en direct
+// sur une page de suivi (SSE). Développement sans matériel — jamais en prod.
+import fs from 'node:fs'
 import net from 'node:net'
 import http from 'node:http'
+import { fileURLToPath } from 'node:url'
 import { decodeGfa } from '../server/zpl'
 
 const ZPL_PORT = Number(process.env.SIM_ZPL_PORT ?? 9100)
@@ -74,61 +79,8 @@ net
   .listen(ZPL_PORT, () => console.log(`Simulateur Zebra — port ZPL : ${ZPL_PORT}`))
 
 // --- page de suivi en direct ---
-const PAGE = `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><title>Simulateur Zebra</title>
-<style>
-body{font-family:sans-serif;margin:0;background:#fff;color:#1c1c1c}
-header{border-bottom:3px solid #c1121f;padding:12px 24px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-h1{font-size:18px;margin:0;flex:1}
-button{padding:8px 12px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer;font:inherit}
-button.actif{background:#c1121f;color:#fff;border-color:#780000}
-main{padding:16px 24px;display:flex;flex-direction:column;gap:16px}
-.job{border:1px solid #e5e5e5;border-radius:8px;padding:12px;display:flex;gap:16px;align-items:flex-start}
-.job img{max-width:55%;border:1px solid #eee;image-rendering:pixelated}
-.meta{font-size:13px;color:#444;line-height:1.8}
-</style></head><body>
-<header><h1>Simulateur d'imprimante Zebra</h1><div id="boutons"></div></header>
-<main id="jobs"><p>En attente de demandes d'impression…</p></main>
-<script>
-const BASCULES = { horsLigne: 'Hors ligne', papier: 'Fin de papier', ruban: 'Fin de ruban', tete: 'Tête ouverte', pause: 'Pause' }
-let etat = {}
-function rendreBoutons() {
-  const div = document.getElementById('boutons')
-  div.innerHTML = ''
-  for (const [cle, libelle] of Object.entries(BASCULES)) {
-    const btn = document.createElement('button')
-    btn.textContent = libelle
-    btn.className = etat[cle] ? 'actif' : ''
-    btn.onclick = () =>
-      fetch('/etat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [cle]: !etat[cle] }),
-      })
-    div.appendChild(btn)
-  }
-}
-new EventSource('/events').onmessage = (e) => {
-  const d = JSON.parse(e.data)
-  etat = d.etat
-  rendreBoutons()
-  if (d.jobs.length) {
-    document.getElementById('jobs').innerHTML = d.jobs
-      .map(
-        (j) =>
-          '<div class="job">' +
-          (j.image ? '<img src="' + j.image + '">' : '') +
-          '<div class="meta">' + j.date +
-          '<br>Quantité : <b>' + j.quantite + '</b>' +
-          '<br>' + j.largeurPx + ' × ' + j.hauteurPx + ' px' +
-          '<br>Contraste ' + j.contraste + ' — vitesse ' + j.vitesse +
-          ' — offsets ' + j.offsetX + ', ' + j.offsetY +
-          '</div></div>'
-      )
-      .join('')
-  }
-}
-</script></body></html>`
+// relus à chaque requête : modifiables sans redémarrer le simulateur
+const fichier = (nom: string) => fs.readFileSync(fileURLToPath(new URL(nom, import.meta.url)))
 
 http
   .createServer((req, res) => {
@@ -153,6 +105,10 @@ http
       })
       return
     }
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(PAGE)
+    if (req.url === '/page.js') {
+      res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' }).end(fichier('page.js'))
+      return
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(fichier('page.html'))
   })
   .listen(WEB_PORT, () => console.log(`Simulateur Zebra — page de suivi : http://localhost:${WEB_PORT}`))

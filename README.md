@@ -153,7 +153,7 @@ Windows, utilisez WSL.
 
 - `server/` — Express, SQLite, conversion PNG → ZPL, socket imprimante, file d'impression
 - `web/` — Vue 3 : kiosque, admin, éditeur, chemin de rendu unique (`src/render.ts`)
-- `tools/` — simulateur d'imprimante
+- `simulator/` — simulateur d'imprimante (serveur ZPL + page de suivi)
 - `tests/` — `unit/` (vitest) et `e2e/` (Playwright)
 - `deploy/` — installation, mise à jour et sauvegarde : scripts `.sh`
   (Linux, service systemd) et `.cmd` (Windows, tâche planifiée), à
