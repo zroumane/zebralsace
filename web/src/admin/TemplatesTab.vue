@@ -173,6 +173,7 @@ function supprimer(t: Template) {
           @dragstart="glisse = t"
           @dragover.prevent
           @drop.stop="surDrop(t, s.categorie)"
+          @click="router.push(`/admin/templates/${t.id}`)"
         >
           <div class="apercu">
             <img v-if="t.vignette_png" :src="t.vignette_png" :alt="t.nom" />
@@ -180,7 +181,7 @@ function supprimer(t: Template) {
           </div>
           <b>{{ t.nom }}</b>
           <small>{{ t.largeur_mm }} × {{ t.hauteur_mm }} mm</small>
-          <div class="actions">
+          <div class="actions" @click.stop>
             <n-button size="small" @click="router.push(`/admin/templates/${t.id}`)">Modifier</n-button>
             <n-button size="small" quaternary @click="ouvrirDuplication(t)">Dupliquer</n-button>
             <n-button size="small" quaternary type="error" @click="supprimer(t)">Supprimer</n-button>
