@@ -122,6 +122,7 @@ async function restaurer(etat: string) {
   const c = canvas.value!
   await c.loadFromJSON(JSON.parse(etat))
   c.backgroundColor = '#ffffff'
+  c.getObjects().forEach(protegerTexte)
   dessinerGrille()
   selection.value = null
   c.renderAll()
@@ -180,6 +181,15 @@ function dessinerGrille() {
   }
 }
 
+// Le texte ne doit jamais être déformé : pas de poignées d'angle sur les blocs
+// texte. La largeur se règle par les poignées latérales (le texte se reformate)
+// et la taille des caractères par le champ Taille du panneau.
+function protegerTexte(o: any) {
+  if (o.text !== undefined) {
+    o.setControlsVisibility({ tl: false, tr: false, bl: false, br: false })
+  }
+}
+
 function ajouterTexte() {
   const c = canvas.value!
   const t = new Textbox('Texte', {
@@ -190,6 +200,7 @@ function ajouterTexte() {
     fontSize: mmToPx(3, dpi.value),
     fill: '#000000',
   })
+  protegerTexte(t)
   c.add(t)
   c.setActiveObject(t)
   c.renderAll()
@@ -290,6 +301,7 @@ onMounted(async () => {
   await c.loadFromJSON(JSON.parse(template.value.doc_json))
   // loadFromJSON réinitialise backgroundColor à undefined (voir render.ts) : on la réapplique.
   c.backgroundColor = '#ffffff'
+  c.getObjects().forEach(protegerTexte)
   appliquerDimensions()
   dessinerGrille()
 
