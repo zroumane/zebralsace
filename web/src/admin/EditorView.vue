@@ -254,8 +254,6 @@ async function enregistrer() {
       largeur_mm: t.largeur_mm,
       hauteur_mm: t.hauteur_mm,
       dlc_jours: t.dlc_jours,
-      categorie: t.categorie,
-      position: t.position,
       doc_json: JSON.stringify(canvas.value!.toJSON()),
       vignette_png: await rendreCourant(0.3),
     })
@@ -274,8 +272,6 @@ async function enregistrer() {
       <label>Largeur (mm) <n-input-number v-model:value="template.largeur_mm" :min="10" :max="laize" size="small" /></label>
       <label>Hauteur (mm) <n-input-number v-model:value="template.hauteur_mm" :min="10" :max="300" size="small" /></label>
       <label>DLC (jours) <n-input-number v-model:value="template.dlc_jours" :min="0" :max="365" size="small" /></label>
-      <label>Catégorie <n-input v-model:value="template.categorie" size="small" style="width: 140px" placeholder="ex. Tartes" /></label>
-      <label>Position <n-input-number v-model:value="template.position" :min="0" size="small" /></label>
       <n-select
         v-model:value="zoom"
         size="small"
