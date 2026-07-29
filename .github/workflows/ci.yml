@@ -1,8 +1,11 @@
 name: CI
 
+# Ne s'exécute que sur les tags de version : c'est la validation de release
+# (les machines clientes ne suivent que les tags, jamais main directement).
 on:
   push:
-  pull_request:
+    tags:
+      - 'v*'
 
 jobs:
   tests:
@@ -21,7 +24,6 @@ jobs:
 
   image:
     # Publie l'image Docker sur GHCR pour chaque version taguée (canal Docker)
-    if: startsWith(github.ref, 'refs/tags/v')
     needs: tests
     runs-on: ubuntu-latest
     permissions:
