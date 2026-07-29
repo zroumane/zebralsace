@@ -193,7 +193,8 @@ function estLibre(o: any) {
 function protegerObjet(o: any) {
   if (o.estGrille || estLibre(o)) return
   if (o.text !== undefined) {
-    o.setControlsVisibility({ tl: false, tr: false, bl: false, br: false })
+    // il ne reste que ml/mr (largeur de reformatage, sans étirer) et la rotation
+    o.setControlsVisibility({ tl: false, tr: false, bl: false, br: false, mt: false, mb: false })
   } else {
     o.setControlsVisibility({ ml: false, mr: false, mt: false, mb: false })
     o.lockScalingFlip = true
