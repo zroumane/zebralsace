@@ -89,12 +89,21 @@ npm run build
 npm run start        # sert l'application sur :3000 (PORT et DATA_DIR surchargeables)
 ```
 
-- **Linux** : unité systemd fournie — `deploy/zebra-etiquettes.service`
-  (copier dans `/etc/systemd/system/`, adapter `WorkingDirectory`, puis
-  `systemctl enable --now zebra-etiquettes`).
-- **Windows** : script fourni — `deploy/zebra-etiquettes.cmd` ; pour un
-  lancement automatique, Planificateur de tâches → « Au démarrage », ou
-  [NSSM](https://nssm.cc) pour un vrai service.
+- **Linux** : `bash deploy/installer.sh` — installe les dépendances, build,
+  crée et démarre le service systemd (adapté au dossier et à l'utilisateur
+  courants). Manuel possible avec `deploy/zebra-etiquettes.service`.
+- **Windows** : script de démarrage fourni — `deploy/zebra-etiquettes.cmd` ;
+  pour un lancement automatique, Planificateur de tâches → « Au démarrage »,
+  ou [NSSM](https://nssm.cc) pour un vrai service.
+
+### Mises à jour
+
+`bash deploy/mettre-a-jour.sh` (Linux) ou `deploy\mettre-a-jour.cmd`
+(Windows) : récupère la dernière version depuis GitHub, réinstalle, rebuild
+et redémarre le service. Au premier lancement, le script génère une **clé de
+déploiement** dédiée (`deploy/cle-deploiement`, gitignorée) et affiche la clé
+publique à ajouter dans GitHub → Settings → Deploy keys (lecture seule) —
+la machine de production n'a ainsi jamais besoin de vos identifiants.
 - Côté postes : l'application est un simple site web — installable en plein
   écran (PWA) sur n'importe quelle tablette, ou utilisable au navigateur.
 

@@ -1,4 +1,5 @@
 node_modules/
+deploy/cle-deploiement*
 data/
 web/dist/
 .e2e-data/
