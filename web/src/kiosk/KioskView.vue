@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useRoute, useRouter } from 'vue-router'
 import { api, type Template } from '../api'
@@ -52,6 +52,19 @@ function fermer() {
   charger()
 }
 
+// bouton plein écran : plus fiable que "Sur l'écran d'accueil" (comportement
+// différent entre Safari et Chrome sur iPad) — l'API Fullscreen marche pareil partout
+const pleinEcran = ref(!!document.fullscreenElement)
+function surChangementPleinEcran() {
+  pleinEcran.value = !!document.fullscreenElement
+}
+onMounted(() => document.addEventListener('fullscreenchange', surChangementPleinEcran))
+onUnmounted(() => document.removeEventListener('fullscreenchange', surChangementPleinEcran))
+async function basculerPleinEcran() {
+  if (document.fullscreenElement) await document.exitFullscreen()
+  else await document.documentElement.requestFullscreen()
+}
+
 // sections par catégorie — l'ordre (catégories alphabétiques, puis position
 // définie dans l'éditeur) vient du serveur, on ne fait que regrouper
 const sections = computed(() => {
@@ -69,6 +82,46 @@ const sections = computed(() => {
     <header class="entete">
       <h1>Étiquettes</h1>
       <StatusBadge />
+      <button
+        class="plein-ecran"
+        :title="pleinEcran ? 'Quitter le plein écran' : 'Plein écran'"
+        @click="basculerPleinEcran"
+      >
+        <svg
+          v-if="!pleinEcran"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+          <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+          <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+          <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+        </svg>
+        <svg
+          v-else
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+          <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+          <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+          <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+        </svg>
+      </button>
       <router-link class="lien-admin" to="/admin/modeles">Administration</router-link>
     </header>
 
@@ -113,6 +166,13 @@ const sections = computed(() => {
 .entete { flex: none; }
 .corps { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .lien-admin { color: #999; font-size: 14px; text-decoration: none; }
+.plein-ecran {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; padding: 0;
+  border: 1px solid #e5e5e5; border-radius: 8px;
+  background: #fff; color: #555; cursor: pointer;
+}
+.plein-ecran:active { border-color: #c1121f; color: #c1121f; }
 .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; padding: 16px 0 24px; }
 .section { margin: 18px 0 0; font-size: 18px; color: #780000; border-bottom: 1px solid #eee; padding-bottom: 4px; }
 .aucun { color: #999; text-align: center; padding: 48px 0; font-size: 18px; }
