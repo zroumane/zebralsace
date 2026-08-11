@@ -3,6 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <script>
+      // iOS : une PWA lancée depuis l'écran d'accueil s'ouvre parfois avec un
+      // zoom mal calculé au premier affichage (bug WebKit connu). Réappliquer
+      // le viewport au retour au premier plan force Safari à le recalculer.
+      addEventListener('pageshow', function () {
+        var v = document.querySelector('meta[name=viewport]')
+        if (v) v.setAttribute('content', v.getAttribute('content'))
+      })
+    </script>
     <title>Étiquettes</title>
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
