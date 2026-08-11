@@ -178,7 +178,7 @@ async function imprimer() {
    sous le bas visible de l'écran. dvh suit la hauteur réellement visible. */
 .plein-ecran { width: 100vw; height: 100vh; height: 100dvh; max-width: none; border-radius: 0; }
 .fermer {
-  font-size: 48px; line-height: 1; padding: 6px 16px; background: none; border: none;
+  font-size: 64px; line-height: 1; padding: 10px 20px; background: none; border: none;
   cursor: pointer; color: #333;
 }
 .fermer:active { color: #c1121f; }
@@ -190,21 +190,21 @@ async function imprimer() {
 .zone-apercu { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 12px; box-sizing: border-box; }
 .apercu { width: 100%; height: 100%; object-fit: contain; border: 1px solid #e5e5e5; box-sizing: border-box; }
 /* tablette : cibles tactiles généreuses, tout en grand */
-.reglages { width: 560px; display: flex; flex-direction: column; gap: 28px; min-height: 0; overflow-y: auto; }
+.reglages { width: 680px; display: flex; flex-direction: column; gap: 32px; min-height: 0; overflow-y: auto; }
 /* les deux dates côte à côte, IMPRIMER calé en bas de la colonne */
 .dates { display: flex; gap: 20px; }
 .dates .date-choix { flex: 1; }
-.btn-imprimer { margin-top: auto; --n-height: 96px !important; font-size: 30px; letter-spacing: 1px; }
+.btn-imprimer { margin-top: auto; --n-height: 140px !important; font-size: 42px; letter-spacing: 1px; }
 .date-choix { display: flex; flex-direction: column; gap: 10px; }
-.date-choix :deep(.n-checkbox) { --n-size: 34px !important; --n-font-size: 22px !important; align-items: center; }
+.date-choix :deep(.n-checkbox) { --n-size: 42px !important; --n-font-size: 26px !important; align-items: center; }
 .date-choix :deep(.n-checkbox__label) { font-weight: 700; }
-.date-choix input { font-size: 26px; padding: 18px 14px; border: 1px solid #ccc; border-radius: 8px; width: 100%; box-sizing: border-box; }
+.date-choix input { font-size: 32px; padding: 22px 16px; border: 1px solid #ccc; border-radius: 8px; width: 100%; box-sizing: border-box; }
 .inactif input { opacity: 0.45; }
 /* − à gauche, + à droite, le nombre en gros au centre */
-.quantite { display: flex; gap: 10px; align-items: stretch; }
-.quantite :deep(.n-button) { --n-height: 84px !important; height: 84px; font-size: 24px; padding: 0 16px; }
-.quantite :deep(.n-input-number) { flex: 1; min-width: 120px; }
-.quantite :deep(.n-input-number .n-input) { --n-height: 84px !important; --n-font-size: 44px !important; }
+.quantite { display: flex; gap: 12px; align-items: stretch; }
+.quantite :deep(.n-button) { --n-height: 120px !important; height: 120px; font-size: 32px; padding: 0 18px; }
+.quantite :deep(.n-input-number) { flex: 1; min-width: 140px; }
+.quantite :deep(.n-input-number .n-input) { --n-height: 120px !important; --n-font-size: 56px !important; }
 .quantite :deep(.n-input-number input) { text-align: center; font-weight: 700; }
 .bloque { font-size: 20px; }
 .bloque { color: #780000; font-weight: 700; margin: 0; }
