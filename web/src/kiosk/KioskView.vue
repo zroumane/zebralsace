@@ -173,14 +173,14 @@ const sections = computed(() => {
   background: #fff; color: #555; cursor: pointer;
 }
 .plein-ecran:active { border-color: #c1121f; color: #c1121f; }
-.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; padding: 16px 0 24px; }
-.section { margin: 18px 0 0; font-size: 18px; color: #780000; border-bottom: 1px solid #eee; padding-bottom: 4px; }
-.aucun { color: #999; text-align: center; padding: 48px 0; font-size: 18px; }
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; padding: 16px 0 24px; }
+.section { margin: 18px 0 0; font-size: 17px; color: #780000; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+.aucun { color: #999; text-align: center; padding: 48px 0; font-size: 17px; }
 .carte {
-  background: #fff; border: 2px solid #e5e5e5; border-radius: 14px;
-  min-height: 180px; padding: 20px; cursor: pointer; font: inherit;
+  background: #fff; border: 2px solid #e5e5e5; border-radius: 12px;
+  min-height: 140px; padding: 16px; cursor: pointer; font: inherit;
   display: grid; place-items: center;
 }
 .carte:active { border-color: #c1121f; background: #fdecea; }
-.carte span { font-weight: 700; font-size: 32px; text-align: center; }
+.carte span { font-weight: 700; font-size: 26px; text-align: center; }
 </style>

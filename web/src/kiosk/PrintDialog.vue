@@ -184,7 +184,7 @@ async function imprimer() {
    sous le bas visible de l'écran. dvh suit la hauteur réellement visible. */
 .plein-ecran { width: 100vw; height: 100vh; height: 100dvh; max-width: none; border-radius: 0; }
 .fermer {
-  font-size: 54px; line-height: 1; padding: 8px 18px; background: none; border: none;
+  font-size: 42px; line-height: 1; padding: 6px 14px; background: none; border: none;
   cursor: pointer; color: #333;
 }
 .fermer:active { color: #c1121f; }
@@ -196,22 +196,22 @@ async function imprimer() {
 .zone-apercu { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 12px; box-sizing: border-box; }
 .apercu { width: 100%; height: 100%; object-fit: contain; border: 1px solid #e5e5e5; box-sizing: border-box; }
 /* tablette : cibles tactiles généreuses, tout en grand */
-.reglages { width: 620px; display: flex; flex-direction: column; gap: 30px; min-height: 0; overflow-y: auto; }
+.reglages { width: 540px; display: flex; flex-direction: column; gap: 24px; min-height: 0; overflow-y: auto; }
 /* chaque date sur sa propre ligne, IMPRIMER calé en bas de la colonne */
-.dates { display: flex; flex-direction: column; gap: 20px; }
-.btn-imprimer { margin-top: auto; --n-height: 115px !important; font-size: 34px; letter-spacing: 1px; }
-.date-choix { display: flex; flex-direction: column; gap: 10px; }
-.date-choix :deep(.n-checkbox) { --n-size: 38px !important; --n-font-size: 24px !important; align-items: center; }
+.dates { display: flex; flex-direction: column; gap: 16px; }
+.btn-imprimer { margin-top: auto; --n-height: 90px !important; font-size: 28px; letter-spacing: 1px; }
+.date-choix { display: flex; flex-direction: column; gap: 8px; }
+.date-choix :deep(.n-checkbox) { --n-size: 30px !important; --n-font-size: 20px !important; align-items: center; }
 .date-choix :deep(.n-checkbox__label) { font-weight: 700; }
-.date-choix input { font-size: 28px; padding: 20px 15px; border: 1px solid #ccc; border-radius: 8px; width: 100%; box-sizing: border-box; }
+.date-choix input { font-size: 22px; padding: 16px 12px; border: 1px solid #ccc; border-radius: 8px; width: 100%; box-sizing: border-box; }
 .inactif input { opacity: 0.45; }
 /* − et + en grand de part et d'autre du champ, puis une ligne ±5 et une ligne ±10 */
-.quantite { display: flex; flex-direction: column; gap: 12px; }
-.quantite :deep(.n-button) { --n-height: 100px !important; height: 100px; font-size: 27px; }
-.quantite :deep(.n-input-number .n-input) { --n-height: 100px !important; --n-font-size: 48px !important; }
+.quantite { display: flex; flex-direction: column; gap: 10px; }
+.quantite :deep(.n-button) { --n-height: 80px !important; height: 80px; font-size: 22px; }
+.quantite :deep(.n-input-number .n-input) { --n-height: 80px !important; --n-font-size: 38px !important; }
 .ligne-principale { display: flex; gap: 12px; align-items: stretch; }
 .ligne-principale :deep(.n-input-number) { flex: 1; min-width: 0; }
-.ligne-principale :deep(.n-button) { width: 110px; flex: none; font-size: 40px; }
+.ligne-principale :deep(.n-button) { width: 90px; flex: none; font-size: 32px; }
 .ligne-pas { display: flex; gap: 12px; }
 .ligne-pas :deep(.n-button) { flex: 1; }
 .quantite :deep(.n-input-number input) { text-align: center; font-weight: 700; }
