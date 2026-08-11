@@ -139,19 +139,25 @@ async function imprimer() {
           </div>
 
           <div class="quantite">
-            <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-10)">−10</n-button>
-            <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-5)">−5</n-button>
-            <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-1)">−</n-button>
-            <n-input-number
-              v-model:value="quantite"
-              :min="1"
-              :max="99999999"
-              :show-button="false"
-              data-testid="quantite"
-            />
-            <n-button secondary @click="ajouterQuantite(1)">+</n-button>
-            <n-button secondary @click="ajouterQuantite(5)">+5</n-button>
-            <n-button secondary @click="ajouterQuantite(10)">+10</n-button>
+            <div class="ligne-principale">
+              <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-1)">−</n-button>
+              <n-input-number
+                v-model:value="quantite"
+                :min="1"
+                :max="99999999"
+                :show-button="false"
+                data-testid="quantite"
+              />
+              <n-button secondary @click="ajouterQuantite(1)">+</n-button>
+            </div>
+            <div class="ligne-pas">
+              <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-5)">−5</n-button>
+              <n-button secondary @click="ajouterQuantite(5)">+5</n-button>
+            </div>
+            <div class="ligne-pas">
+              <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-10)">−10</n-button>
+              <n-button secondary @click="ajouterQuantite(10)">+10</n-button>
+            </div>
           </div>
 
           <n-button
@@ -178,7 +184,7 @@ async function imprimer() {
    sous le bas visible de l'écran. dvh suit la hauteur réellement visible. */
 .plein-ecran { width: 100vw; height: 100vh; height: 100dvh; max-width: none; border-radius: 0; }
 .fermer {
-  font-size: 64px; line-height: 1; padding: 10px 20px; background: none; border: none;
+  font-size: 54px; line-height: 1; padding: 8px 18px; background: none; border: none;
   cursor: pointer; color: #333;
 }
 .fermer:active { color: #c1121f; }
@@ -190,21 +196,24 @@ async function imprimer() {
 .zone-apercu { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 12px; box-sizing: border-box; }
 .apercu { width: 100%; height: 100%; object-fit: contain; border: 1px solid #e5e5e5; box-sizing: border-box; }
 /* tablette : cibles tactiles généreuses, tout en grand */
-.reglages { width: 680px; display: flex; flex-direction: column; gap: 32px; min-height: 0; overflow-y: auto; }
-/* les deux dates côte à côte, IMPRIMER calé en bas de la colonne */
-.dates { display: flex; gap: 20px; }
-.dates .date-choix { flex: 1; }
-.btn-imprimer { margin-top: auto; --n-height: 140px !important; font-size: 42px; letter-spacing: 1px; }
+.reglages { width: 620px; display: flex; flex-direction: column; gap: 30px; min-height: 0; overflow-y: auto; }
+/* chaque date sur sa propre ligne, IMPRIMER calé en bas de la colonne */
+.dates { display: flex; flex-direction: column; gap: 20px; }
+.btn-imprimer { margin-top: auto; --n-height: 115px !important; font-size: 34px; letter-spacing: 1px; }
 .date-choix { display: flex; flex-direction: column; gap: 10px; }
-.date-choix :deep(.n-checkbox) { --n-size: 42px !important; --n-font-size: 26px !important; align-items: center; }
+.date-choix :deep(.n-checkbox) { --n-size: 38px !important; --n-font-size: 24px !important; align-items: center; }
 .date-choix :deep(.n-checkbox__label) { font-weight: 700; }
-.date-choix input { font-size: 32px; padding: 22px 16px; border: 1px solid #ccc; border-radius: 8px; width: 100%; box-sizing: border-box; }
+.date-choix input { font-size: 28px; padding: 20px 15px; border: 1px solid #ccc; border-radius: 8px; width: 100%; box-sizing: border-box; }
 .inactif input { opacity: 0.45; }
-/* − à gauche, + à droite, le nombre en gros au centre */
-.quantite { display: flex; gap: 12px; align-items: stretch; }
-.quantite :deep(.n-button) { --n-height: 120px !important; height: 120px; font-size: 32px; padding: 0 18px; }
-.quantite :deep(.n-input-number) { flex: 1; min-width: 140px; }
-.quantite :deep(.n-input-number .n-input) { --n-height: 120px !important; --n-font-size: 56px !important; }
+/* − et + en grand de part et d'autre du champ, puis une ligne ±5 et une ligne ±10 */
+.quantite { display: flex; flex-direction: column; gap: 12px; }
+.quantite :deep(.n-button) { --n-height: 100px !important; height: 100px; font-size: 27px; }
+.quantite :deep(.n-input-number .n-input) { --n-height: 100px !important; --n-font-size: 48px !important; }
+.ligne-principale { display: flex; gap: 12px; align-items: stretch; }
+.ligne-principale :deep(.n-input-number) { flex: 1; min-width: 0; }
+.ligne-principale :deep(.n-button) { width: 110px; flex: none; font-size: 40px; }
+.ligne-pas { display: flex; gap: 12px; }
+.ligne-pas :deep(.n-button) { flex: 1; }
 .quantite :deep(.n-input-number input) { text-align: center; font-weight: 700; }
 .bloque { font-size: 20px; }
 .bloque { color: #780000; font-weight: 700; margin: 0; }
