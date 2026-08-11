@@ -28,10 +28,18 @@ if defined TAG (
 ) else (
   git pull --ff-only || exit /b 1
 )
+rem La tache planifiee garde npm run start (et esbuild.exe) ouvert en permanence ;
+rem sous Windows (contrairement a Linux) npm ci ne peut pas remplacer un fichier
+rem verrouille par un process en cours - on arrete donc l'appli avant de mettre a jour.
+echo Arret de l'application...
+schtasks /end /tn Zebralsace >nul 2>&1
+timeout /t 2 /nobreak >nul
+
 call npm ci || exit /b 1
 call npm run build || exit /b 1
 
-echo Mise a jour terminee. Pour redemarrer :
-echo   schtasks /end /tn Zebralsace ^&^& schtasks /run /tn Zebralsace   (tache planifiee)
-echo   nssm restart zebra-etiquettes                                   (si installe via NSSM)
-echo   sinon : double-clic sur deploy\zebra-etiquettes.cmd
+echo Redemarrage de l'application...
+schtasks /run /tn Zebralsace >nul 2>&1
+
+echo Mise a jour terminee.
+echo Installation via NSSM au lieu de la tache planifiee : redemarrez avec "nssm restart zebra-etiquettes".
