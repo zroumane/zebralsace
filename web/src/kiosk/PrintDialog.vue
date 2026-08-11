@@ -173,35 +173,37 @@ async function imprimer() {
 </template>
 
 <style scoped>
-/* le popup occupe tout l'écran (kiosque tactile) */
-.plein-ecran { width: 100vw; height: 100vh; max-width: none; border-radius: 0; }
+/* le popup occupe tout l'écran (kiosque tactile) — 100dvh, pas 100vh : sur
+   iPad/Safari, 100vh compte la barre d'adresse et fait déborder la popup
+   sous le bas visible de l'écran. dvh suit la hauteur réellement visible. */
+.plein-ecran { width: 100vw; height: 100vh; height: 100dvh; max-width: none; border-radius: 0; }
 .fermer {
-  font-size: 40px; line-height: 1; padding: 0 12px; background: none; border: none;
+  font-size: 48px; line-height: 1; padding: 6px 16px; background: none; border: none;
   cursor: pointer; color: #333;
 }
 .fermer:active { color: #c1121f; }
-.dims { font-size: 15px; font-weight: 400; color: #888; margin-left: 10px; }
+.dims { font-size: 17px; font-weight: 400; color: #888; margin-left: 10px; }
 .contenu { display: flex; gap: 32px; flex: 1; min-height: 0; }
 .zone-apercu { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
 /* la bordure épouse exactement l'étiquette : l'image garde son ratio, pas de zone vide encadrée */
-.apercu { max-width: 100%; max-height: calc(100vh - 140px); border: 1px solid #e5e5e5; }
+.apercu { max-width: 100%; max-height: calc(100vh - 140px); max-height: calc(100dvh - 140px); border: 1px solid #e5e5e5; }
 /* tablette : cibles tactiles généreuses, tout en grand */
-.reglages { width: 520px; display: flex; flex-direction: column; gap: 28px; }
+.reglages { width: 560px; display: flex; flex-direction: column; gap: 28px; min-height: 0; overflow-y: auto; }
 /* les deux dates côte à côte, IMPRIMER calé en bas de la colonne */
 .dates { display: flex; gap: 20px; }
 .dates .date-choix { flex: 1; }
-.btn-imprimer { margin-top: auto; --n-height: 76px !important; font-size: 24px; letter-spacing: 1px; }
+.btn-imprimer { margin-top: auto; --n-height: 96px !important; font-size: 30px; letter-spacing: 1px; }
 .date-choix { display: flex; flex-direction: column; gap: 10px; }
-.date-choix :deep(.n-checkbox) { --n-size: 26px !important; --n-font-size: 18px !important; align-items: center; }
+.date-choix :deep(.n-checkbox) { --n-size: 34px !important; --n-font-size: 22px !important; align-items: center; }
 .date-choix :deep(.n-checkbox__label) { font-weight: 700; }
-.date-choix input { font-size: 22px; padding: 14px 12px; border: 1px solid #ccc; border-radius: 8px; width: 100%; box-sizing: border-box; }
+.date-choix input { font-size: 26px; padding: 18px 14px; border: 1px solid #ccc; border-radius: 8px; width: 100%; box-sizing: border-box; }
 .inactif input { opacity: 0.45; }
 /* − à gauche, + à droite, le nombre en gros au centre */
 .quantite { display: flex; gap: 10px; align-items: stretch; }
-.quantite :deep(.n-button) { --n-height: 64px !important; height: 64px; font-size: 19px; padding: 0 14px; }
+.quantite :deep(.n-button) { --n-height: 84px !important; height: 84px; font-size: 24px; padding: 0 16px; }
 .quantite :deep(.n-input-number) { flex: 1; min-width: 120px; }
-.quantite :deep(.n-input-number .n-input) { --n-height: 64px !important; --n-font-size: 36px !important; }
+.quantite :deep(.n-input-number .n-input) { --n-height: 84px !important; --n-font-size: 44px !important; }
 .quantite :deep(.n-input-number input) { text-align: center; font-weight: 700; }
-.bloque { font-size: 18px; }
+.bloque { font-size: 20px; }
 .bloque { color: #780000; font-weight: 700; margin: 0; }
 </style>

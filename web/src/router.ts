@@ -4,6 +4,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: () => import('./kiosk/KioskView.vue') },
+    { path: '/etiquette/:id', component: () => import('./kiosk/KioskView.vue') },
     { path: '/admin/:onglet?', component: () => import('./admin/AdminView.vue') },
     { path: '/admin/templates/:id', component: () => import('./admin/EditorView.vue') },
   ],
