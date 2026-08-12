@@ -27,30 +27,31 @@ watch(fabrication, (v) => {
 })
 
 // étiquette carton : toujours une seule étiquette imprimée, quel que soit le
-// sélecteur de lot ci-dessous — mais la quantité affichée dessus ({{quantite}})
-// reste modifiable au cas par cas, préremplie depuis le modèle (comme la DLC)
+// sélecteur de lot ci-dessous. La quantité affichée dessus ({{quantite}})
+// n'est plus modifiable au moment de l'impression — figée sur celle réglée
+// dans le modèle (Administration → modèle → Quantité carton).
 const modeCarton = ref(false)
-const quantiteCarton = ref(template.value.quantite_carton)
-const quantiteCartonTouchee = ref(false)
-function ajusterQuantiteCarton(n: number) {
-  quantiteCarton.value = Math.max(1, quantiteCarton.value + n)
-  quantiteCartonTouchee.value = true
-}
+
+// Lot d'étiquettes : la quantité par défaut reprend celle du modèle (un
+// carton d'un coup, le cas le plus courant), modifiable ensuite au cas par
+// cas comme la DLC.
+const quantite = ref(template.value.quantite_carton)
+const quantiteTouchee = ref(false)
 
 api.get<Template>(`/api/templates/${props.template.id}`).then((t) => {
   template.value = t
   if (!peremptionTouchee.value)
     peremption.value = versIso(addDays(new Date(fabrication.value), t.dlc_jours))
-  if (!quantiteCartonTouchee.value) quantiteCarton.value = t.quantite_carton
+  if (!quantiteTouchee.value) quantite.value = t.quantite_carton
 })
 
 // cochée = la date figure sur l'étiquette et son champ est modifiable
 const avecDate = ref(true)
 const avecDlc = ref(true)
-const quantite = ref(1)
 
 function ajouterQuantite(n: number) {
   quantite.value = Math.min(99999999, Math.max(1, quantite.value + n))
+  quantiteTouchee.value = true
 }
 const quantiteFinale = computed(() => (modeCarton.value ? 1 : quantite.value))
 const apercu = ref('')
@@ -82,7 +83,7 @@ watchEffect(async () => {
         globales.value,
         new Date(fabrication.value),
         new Date(peremption.value),
-        quantiteCarton.value,
+        template.value.quantite_carton,
         template.value.poids_g,
         modeCarton.value
       ),
@@ -119,7 +120,8 @@ async function imprimer() {
     message.success(
       `${quantiteFinale.value} étiquette${quantiteFinale.value > 1 ? 's' : ''} ajoutée${quantiteFinale.value > 1 ? 's' : ''} à la file d'impression`
     )
-    emit('close')
+    // la popup reste ouverte : on peut relancer une impression (autre quantité,
+    // autre date…) sans avoir à rouvrir le modèle depuis le kiosque
   } catch (e) {
     message.error((e as Error).message)
   } finally {
@@ -191,6 +193,7 @@ async function imprimer() {
                 :max="99999999"
                 :show-button="false"
                 data-testid="quantite"
+                @update:value="quantiteTouchee = true"
               />
               <n-button secondary @click="ajouterQuantite(1)">+</n-button>
             </div>
@@ -204,19 +207,8 @@ async function imprimer() {
             </div>
           </div>
           <div v-else class="quantite">
-            <p class="info-carton">1 étiquette — quantité affichée dessus</p>
-            <div class="ligne-principale">
-              <n-button secondary :disabled="quantiteCarton <= 1" @click="ajusterQuantiteCarton(-1)">−</n-button>
-              <n-input-number
-                v-model:value="quantiteCarton"
-                :min="1"
-                :max="999999"
-                :show-button="false"
-                data-testid="quantite-carton"
-                @update:value="quantiteCartonTouchee = true"
-              />
-              <n-button secondary @click="ajusterQuantiteCarton(1)">+</n-button>
-            </div>
+            <p class="info-carton">1 étiquette — quantité affichée dessus (réglée dans le modèle)</p>
+            <p class="quantite-carton-figee" data-testid="quantite-carton">× {{ template.quantite_carton }}</p>
           </div>
 
           <n-button
@@ -281,6 +273,13 @@ async function imprimer() {
 .ligne-pas { display: flex; gap: 12px; }
 .ligne-pas :deep(.n-button) { flex: 1; }
 .quantite :deep(.n-input-number input) { text-align: center; font-weight: 700; }
+/* figé (non modifiable) : même gabarit que le champ de saisie, fond neutre
+   pour signaler que ce n'est pas cliquable */
+.quantite-carton-figee {
+  height: 80px; margin: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 38px; font-weight: 700; background: #f7f7f7; border: 1px solid #e5e5e5;
+  border-radius: 8px; box-sizing: border-box; color: #555;
+}
 .bloque { font-size: 20px; }
 .bloque { color: #780000; font-weight: 700; margin: 0; }
 </style>
