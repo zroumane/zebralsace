@@ -450,6 +450,19 @@ watch([zoom, () => template.value?.largeur_mm, () => template.value?.hauteur_mm]
   }
 })
 
+// flèches = déplacement fin (0,1 mm), Maj+flèche = pas plus grand (1 mm) —
+// complète le glisser-déposer (aimanté à 1 mm) pour les ajustements précis.
+// Un seul point d'historique par appui : le déplacement se répète pendant
+// l'appui maintenu (comme un glisser), la position finale n'est commise
+// qu'au relâchement (cf. surRelacheTouche).
+const FLECHES: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+}
+let objetDeplaceClavier: any = null
+
 function surTouche(e: KeyboardEvent) {
   const c = canvas.value
   if (!c) return
@@ -465,15 +478,40 @@ function surTouche(e: KeyboardEvent) {
     return
   }
   const actif: any = c.getActiveObject()
-  if (actif && !actif.isEditing && (e.key === 'Delete' || e.key === 'Backspace')) {
+  // un champ du panneau (ex. Largeur/Hauteur) répond aussi aux flèches : ne
+  // pas lui voler l'appui pour déplacer l'objet sélectionné en même temps
+  const cible = e.target as HTMLElement
+  const dansChamp = cible?.tagName === 'INPUT' || cible?.tagName === 'TEXTAREA' || cible?.isContentEditable
+  if (actif && !actif.isEditing && !dansChamp && FLECHES[e.key]) {
+    e.preventDefault()
+    const pas = mmToPx(e.shiftKey ? 1 : 0.1, dpi.value)
+    const [dx, dy] = FLECHES[e.key]
+    actif.set({ left: actif.left + dx * pas, top: actif.top + dy * pas })
+    actif.setCoords()
+    contenir(actif)
+    c.requestRenderAll()
+    objetDeplaceClavier = actif
+    return
+  }
+  if (actif && !actif.isEditing && !dansChamp && (e.key === 'Delete' || e.key === 'Backspace')) {
     c.getActiveObjects().forEach((o) => c.remove(o))
     c.discardActiveObject()
     c.renderAll()
     e.preventDefault()
   }
 }
+function surRelacheTouche(e: KeyboardEvent) {
+  if (objetDeplaceClavier && FLECHES[e.key]) {
+    toucher(objetDeplaceClavier)
+    objetDeplaceClavier = null
+  }
+}
 window.addEventListener('keydown', surTouche)
-onBeforeUnmount(() => window.removeEventListener('keydown', surTouche))
+window.addEventListener('keyup', surRelacheTouche)
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', surTouche)
+  window.removeEventListener('keyup', surRelacheTouche)
+})
 
 async function rendreCourant(multiplier: number): Promise<string> {
   const t = template.value!
