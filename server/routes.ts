@@ -14,7 +14,9 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   const api = express.Router()
 
   const VERSION = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8')).version as string
-  api.get('/ping', (_req, res) => res.json({ ok: true, version: VERSION }))
+  // no-store : le client interroge cette route pour détecter un nouveau déploiement
+  // (cf. useAutoReload.ts) — une réponse mise en cache casserait la détection
+  api.get('/ping', (_req, res) => res.set('Cache-Control', 'no-store').json({ ok: true, version: VERSION }))
 
   // ---- authentification admin (active seulement si un mot de passe est défini) ----
   const sessions = new Set<string>()
@@ -321,9 +323,24 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
 
   const dist = path.resolve('web/dist')
   if (fs.existsSync(dist)) {
-    app.use(express.static(dist))
+    // index.html jamais mis en cache : un onglet rechargé doit toujours voir le
+    // dernier déploiement, sinon il référence des chunks JS que le build
+    // suivant a supprimés (page blanche tant qu'on ne force pas un vidage de
+    // cache). Les fichiers sous /assets sont hashés par Vite (nom qui change à
+    // chaque contenu différent) : cache long et immuable sans risque.
+    app.use(
+      express.static(dist, {
+        setHeaders: (res, chemin) => {
+          res.setHeader(
+            'Cache-Control',
+            chemin.endsWith('index.html') ? 'no-cache, no-store, must-revalidate' : 'public, max-age=31536000, immutable'
+          )
+        },
+      })
+    )
     app.use((req, res, next) => {
       if (req.method === 'GET' && !req.path.startsWith('/api')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
         return res.sendFile(path.join(dist, 'index.html'))
       }
       next()

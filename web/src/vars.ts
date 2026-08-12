@@ -40,7 +40,9 @@ export function computeVars(
     dlc: formatDate(peremption),
     quantite: `x${quantiteCarton}`,
     // étiquette carton : poids total (quantité × poids unitaire), en kg
-    poids: carton ? `${formatKg(quantiteCarton * poidsG)} KG` : `${poidsG} G`,
+    poids: carton 
+    ? (quantiteCarton * poidsG >= 1000 ? `${formatKg(quantiteCarton * poidsG)} KG` : `${quantiteCarton * poidsG} G`) 
+    : `${poidsG} G`,
   }
 }
 
