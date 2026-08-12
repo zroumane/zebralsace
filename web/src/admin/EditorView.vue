@@ -5,6 +5,7 @@ import { Canvas, FabricImage, FabricText, Group, Line, Rect, Textbox } from 'fab
 import { useMessage } from 'naive-ui'
 import { api, type Globale, type Logo, type Template } from '../api'
 import { FAMILLES_POLICES, POLICES, mmToPx, renderLabel } from '../render'
+import { rendreCodeBarre, TYPES_CODE_BARRE } from '../barcode'
 import { addDays, computeVars } from '../vars'
 import BoutonRetour from '../BoutonRetour.vue'
 import LogoLibrary from './LogoLibrary.vue'
@@ -115,7 +116,7 @@ const peutAnnuler = ref(false)
 const peutRetablir = ref(false)
 
 function instantaneCanvas(): string {
-  return JSON.stringify(canvas.value!.toObject(['tableauNutritionnel']))
+  return JSON.stringify(canvas.value!.toObject(['tableauNutritionnel', 'codeBarre']))
 }
 function majHistorique() {
   peutAnnuler.value = pileAnnuler.length > 0
@@ -256,11 +257,40 @@ async function placerImage(logo: Logo) {
   const img = await FabricImage.fromURL(`/logos/${logo.chemin_fichier}`)
   if (logo.type !== 'code-barres' && img.width! > mmToPx(30, dpi.value)) {
     img.scaleToWidth(mmToPx(30, dpi.value))
-  } // ponytail: un code-barres est posé à sa taille native — jamais agrandi, pour rester scannable
+  } // code-barres généré via l'ancien système Médias (obsolète) : jamais agrandi, pour rester scannable
   img.set({ left: mmToPx(5, dpi.value), top: mmToPx(5, dpi.value) })
   canvas.value!.add(img)
   canvas.value!.setActiveObject(img)
   canvas.value!.renderAll()
+}
+
+// --- code-barres : deux valeurs (unité / carton), jamais affichées telles
+// quelles dans l'éditeur — le canevas ne montre qu'un repère « 0…0 » constant
+// (bwip-js n'est appelé ici qu'au changement de TYPE, pour la forme/l'aspect).
+// L'impression et l'aperçu choisissent et rendent la bonne valeur (cf.
+// hydraterCodesBarres dans render.ts) selon le mode Lot/Carton.
+interface DonneesCodeBarre {
+  type: string
+  valeurUnite: string
+  valeurCarton: string
+}
+const REPERE_CODE_BARRE = '000000000000'
+
+async function construireRepereCodeBarre(type: string): Promise<FabricImage> {
+  const rendu = await rendreCodeBarre({ type, valeur: REPERE_CODE_BARRE, dpi: dpi.value })
+  return FabricImage.fromURL(rendu.dataUrl)
+}
+
+async function ajouterCodeBarre() {
+  const c = canvas.value!
+  const d: DonneesCodeBarre = { type: 'gln', valeurUnite: '', valeurCarton: '' }
+  const img = await construireRepereCodeBarre(d.type)
+  ;(img as any).codeBarre = { ...d }
+  img.set({ left: mmToPx(5, dpi.value), top: mmToPx(5, dpi.value) })
+  protegerObjet(img)
+  c.add(img)
+  c.setActiveObject(img)
+  c.renderAll()
 }
 
 // chaque entrée du sélecteur de police s'affiche dans sa propre police
@@ -518,18 +548,20 @@ onBeforeUnmount(() => {
   window.removeEventListener('keyup', surRelacheTouche)
 })
 
-async function rendreCourant(multiplier: number): Promise<string> {
+async function rendreCourant(multiplier: number, carton = false): Promise<string> {
   const t = template.value!
   const globales = await api.get<Globale[]>('/api/globals')
   const auj = new Date()
-  return renderLabel(canvas.value!.toObject(['tableauNutritionnel']), {
+  return renderLabel(canvas.value!.toObject(['tableauNutritionnel', 'codeBarre']), {
     widthMm: t.largeur_mm,
     heightMm: t.hauteur_mm,
     dpi: dpi.value,
     vars: computeVars(globales, auj, addDays(auj, t.dlc_jours), t.quantite_carton),
     baseDate: auj,
     hideDlc: false,
+    hideQuantite: !carton,
     multiplier,
+    carton,
   })
 }
 
@@ -736,9 +768,68 @@ watch(
   { deep: true }
 )
 
+// Édition dans le panneau : les valeurs unité/carton sont juste stockées sur
+// l'objet (jamais rendues sur le canevas, cf. plus haut) — seul un changement
+// de TYPE régénère le repère visuel (forme/aspect différents). jeton évite
+// qu'une régénération périmée (bwip-js asynchrone) n'écrase un état plus
+// récent ; le drapeau évite que le rechargement de la sélection (même
+// contenu) ne redéclenche une régénération.
+const codeBarre = ref<DonneesCodeBarre>({ type: 'gln', valeurUnite: '', valeurCarton: '' })
+let cbEnChargement = false
+let cbJeton = 0
+watch(selection, (s: any) => {
+  if (s?.codeBarre) {
+    cbEnChargement = true
+    codeBarre.value = { ...s.codeBarre }
+  }
+})
+watch(
+  codeBarre,
+  async (v) => {
+    if (cbEnChargement) {
+      cbEnChargement = false
+      return
+    }
+    const ancien: any = selection.value
+    if (!ancien?.codeBarre) return
+    if (ancien.codeBarre.type === v.type) {
+      // seules les valeurs ont changé : rien à redessiner, juste à retenir
+      ancien.codeBarre = { ...v }
+      toucher(ancien)
+      return
+    }
+    const jeton = ++cbJeton
+    const img = await construireRepereCodeBarre(v.type)
+    if (jeton !== cbJeton || selection.value !== ancien) return
+    const c = canvas.value!
+    ;(img as any).codeBarre = { ...v }
+    img.set({ left: ancien.left, top: ancien.top, scaleX: ancien.scaleX, scaleY: ancien.scaleY, angle: ancien.angle })
+    protegerObjet(img)
+    c.remove(ancien)
+    c.add(img)
+    c.setActiveObject(img)
+    c.renderAll()
+  },
+  { deep: true }
+)
+
 const apercuJour = ref<string | null>(null)
+const apercuCarton = ref(false)
 async function apercuValeursDuJour() {
-  apercuJour.value = await rendreCourant(1)
+  apercuCarton.value = false
+  try {
+    apercuJour.value = await rendreCourant(1, false)
+  } catch (e) {
+    message.error((e as Error).message)
+  }
+}
+async function basculerApercuCarton(carton: boolean) {
+  apercuCarton.value = carton
+  try {
+    apercuJour.value = await rendreCourant(1, carton)
+  } catch (e) {
+    message.error((e as Error).message)
+  }
 }
 
 async function imprimerTest() {
@@ -746,7 +837,7 @@ async function imprimerTest() {
     await api.post('/api/print', {
       template_nom: `${template.value!.nom} (test)`,
       quantite: 1,
-      png: await rendreCourant(1),
+      png: apercuJour.value ?? (await rendreCourant(1, apercuCarton.value)),
     })
     message.success('Étiquette de test envoyée')
   } catch (e) {
@@ -765,9 +856,9 @@ async function enregistrer() {
       hauteur_mm: t.hauteur_mm,
       dlc_jours: t.dlc_jours,
       quantite_carton: t.quantite_carton,
-      // toObject(['tableauNutritionnel']) : conserve les valeurs des tableaux
-      // nutritionnels pour pouvoir les rééditer
-      doc_json: JSON.stringify(canvas.value!.toObject(['tableauNutritionnel'])),
+      // conserve les valeurs des tableaux nutritionnels et des codes-barres
+      // (unité + carton) pour pouvoir les rééditer
+      doc_json: JSON.stringify(canvas.value!.toObject(['tableauNutritionnel', 'codeBarre'])),
       vignette_png: await rendreCourant(0.3),
     })
     empreinteProps.value = proprietes()
@@ -815,9 +906,10 @@ async function enregistrer() {
           <n-button size="small" :disabled="!peutAnnuler" data-testid="annuler" @click="annuler" title="Ctrl+Z">↶ Annuler</n-button>
           <n-button size="small" :disabled="!peutRetablir" data-testid="retablir" @click="retablir" title="Ctrl+Y">↷</n-button>
         </div>
-        <n-button data-testid="ajouter-texte" @click="ajouterTexte">+ Texte</n-button>
-        <n-button data-testid="ajouter-rectangle" @click="ajouterRectangle">+ Rectangle</n-button>
-        <n-button data-testid="ajouter-tableau" @click="ajouterTableau">+ Tableau nutritionnel</n-button>
+        <n-button data-testid="ajouter-texte" :disabled="!canvas" @click="ajouterTexte">+ Texte</n-button>
+        <n-button data-testid="ajouter-rectangle" :disabled="!canvas" @click="ajouterRectangle">+ Rectangle</n-button>
+        <n-button data-testid="ajouter-tableau" :disabled="!canvas" @click="ajouterTableau">+ Tableau nutritionnel</n-button>
+        <n-button data-testid="ajouter-code-barre" :disabled="!canvas" @click="ajouterCodeBarre">+ Code-barres</n-button>
         <b>Médias</b>
         <LogoLibrary @pick="placerImage" />
       </div>
@@ -875,6 +967,24 @@ async function enregistrer() {
             <n-input v-model:value="valNut[l.cle]" size="small" :placeholder="l.ex" :data-testid="`nut-${l.cle}`" />
           </label>
           <p class="astuce">Les lignes laissées vides ne sont pas affichées.</p>
+        </template>
+
+        <template v-else-if="selection && selection.codeBarre">
+          <b>Code-barres</b>
+          <n-select v-model:value="codeBarre.type" :options="TYPES_CODE_BARRE" data-testid="cb-type" />
+          <label class="ligne-nut">
+            Valeur — étiquette à l'unité
+            <n-input v-model:value="codeBarre.valeurUnite" size="small" data-testid="cb-valeur-unite" />
+          </label>
+          <label class="ligne-nut">
+            Valeur — étiquette carton
+            <n-input v-model:value="codeBarre.valeurCarton" size="small" data-testid="cb-valeur-carton" />
+          </label>
+          <p class="astuce">
+            Le canevas affiche un repère (0…0), jamais la vraie valeur.
+            L'impression à l'unité utilise la première valeur, l'impression
+            carton la seconde. Utilisez « Aperçu » pour vérifier les deux rendus.
+          </p>
         </template>
 
         <template v-else-if="selection && String(selection.type).toLowerCase() !== 'image'">
@@ -941,7 +1051,31 @@ async function enregistrer() {
 
     <n-modal :show="!!apercuJour" @update:show="apercuJour = null">
       <n-card title="Aperçu" style="max-width: 900px" closable @close="apercuJour = null">
-        <img v-if="apercuJour" :src="apercuJour" alt="aperçu" style="width: 100%; border: 1px solid #e5e5e5" />
+        <div style="display: flex; gap: 8px; margin-bottom: 12px">
+          <n-button
+            size="small"
+            :type="!apercuCarton ? 'primary' : 'default'"
+            data-testid="apercu-mode-unite"
+            @click="basculerApercuCarton(false)"
+          >
+            Étiquette unité
+          </n-button>
+          <n-button
+            size="small"
+            :type="apercuCarton ? 'primary' : 'default'"
+            data-testid="apercu-mode-carton"
+            @click="basculerApercuCarton(true)"
+          >
+            Étiquette carton
+          </n-button>
+        </div>
+        <img
+          v-if="apercuJour"
+          :src="apercuJour"
+          alt="aperçu"
+          data-testid="apercu-editeur"
+          style="width: 100%; border: 1px solid #e5e5e5"
+        />
         <template #action>
           <n-button type="primary" data-testid="imprimer-test" @click="imprimerTest">Imprimer un test</n-button>
         </template>

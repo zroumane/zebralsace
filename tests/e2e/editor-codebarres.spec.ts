@@ -1,38 +1,88 @@
 import { test, expect } from '@playwright/test'
 
-test('génère un EAN-13 nommé dans Médias et l’insère dans un modèle', async ({ page, request }) => {
+test('ajout d’un code-barres avec valeurs unité/carton distinctes, persistées', async ({ page, request }) => {
   const { id } = await (await request.post('/api/templates', { data: { nom: 'CB e2e' } })).json()
-
-  await page.goto('/admin')
-  await page.getByText('Médias').click()
-  await page.getByTestId('cb-nom').locator('input').fill('EAN test')
-  await page.getByTestId('cb-valeur').locator('input').fill('123456789012')
-  await page.getByTestId('cb-generer').click()
-  await expect(page.getByText('« EAN test » ajouté')).toBeVisible()
-
-  const logos = await (await request.get('/api/logos')).json()
-  const cb = logos.find((l: any) => l.nom === 'EAN test')
-  expect(cb).toBeTruthy()
-  expect(cb.type).toBe('code-barres')
 
   await page.goto(`/admin/templates/${id}`)
   await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
-  await page.getByTestId(`logo-${cb.id}`).click()
+  await page.getByTestId('ajouter-code-barre').click()
+
+  await page.getByTestId('cb-valeur-unite').locator('input').fill('400638133393')
+  await page.getByTestId('cb-valeur-carton').locator('input').fill('500123456780')
+
   await page.getByTestId('enregistrer').click()
   await expect(page.getByText('Modèle enregistré')).toBeVisible()
 
   const t = await (await request.get(`/api/templates/${id}`)).json()
-  expect(t.doc_json).toContain('Image')
+  const doc = JSON.parse(t.doc_json)
+  const cb = doc.objects.find((o: any) => o.codeBarre)
+  expect(cb).toBeTruthy()
+  expect(cb.codeBarre.valeurUnite).toBe('400638133393')
+  expect(cb.codeBarre.valeurCarton).toBe('500123456780')
 })
 
-test('valeur EAN invalide → erreur, rien d’ajouté à la bibliothèque', async ({ page, request }) => {
-  await page.goto('/admin')
-  await page.getByText('Médias').click()
-  await page.getByTestId('cb-nom').locator('input').fill('Mauvais EAN')
-  await page.getByTestId('cb-valeur').locator('input').fill('123')
-  await page.getByTestId('cb-generer').click()
-  await expect(page.getByText(/Code-barres invalide/)).toBeVisible()
+test('le canevas de l’éditeur affiche toujours le repère 0…0, jamais la vraie valeur tapée', async ({ page, request }) => {
+  const { id } = await (await request.post('/api/templates', { data: { nom: 'CB repère e2e' } })).json()
 
-  const logos = await (await request.get('/api/logos')).json()
-  expect(logos.find((l: any) => l.nom === 'Mauvais EAN')).toBeUndefined()
+  await page.goto(`/admin/templates/${id}`)
+  await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
+  await page.getByTestId('ajouter-code-barre').click()
+
+  const canvasEl = page.locator('.zone-canvas canvas').last()
+  const avant = await canvasEl.evaluate((el: HTMLCanvasElement) => el.toDataURL())
+
+  await page.getByTestId('cb-valeur-unite').locator('input').fill('400638133393')
+  await page.getByTestId('cb-valeur-carton').locator('input').fill('111111111117')
+  await page.waitForTimeout(200)
+
+  const apres = await canvasEl.evaluate((el: HTMLCanvasElement) => el.toDataURL())
+  expect(apres).toBe(avant) // valeurs tapées jamais rendues sur le canevas
+})
+
+test('aperçu : la bascule unité/carton change le rendu affiché', async ({ page, request }) => {
+  const { id } = await (await request.post('/api/templates', { data: { nom: 'CB aperçu e2e' } })).json()
+
+  await page.goto(`/admin/templates/${id}`)
+  await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
+  await page.getByTestId('ajouter-code-barre').click()
+  await page.getByTestId('cb-valeur-unite').locator('input').fill('400638133393')
+  await page.getByTestId('cb-valeur-carton').locator('input').fill('111111111117')
+
+  await page.getByTestId('apercu-jour').click()
+  const apercu = page.getByTestId('apercu-editeur')
+  await expect(apercu).toBeVisible()
+  const srcUnite = await apercu.getAttribute('src')
+
+  await page.getByTestId('apercu-mode-carton').click()
+  await expect.poll(() => apercu.getAttribute('src')).not.toBe(srcUnite)
+})
+
+test('le GLN est le type par défaut, et une clé de contrôle erronée est tolérée', async ({ page, request }) => {
+  const { id } = await (await request.post('/api/templates', { data: { nom: 'CB GLN e2e' } })).json()
+
+  await page.goto(`/admin/templates/${id}`)
+  await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
+  await page.getByTestId('ajouter-code-barre').click()
+  await expect(page.getByTestId('cb-type')).toContainText('GLN')
+
+  // 13 chiffres avec une clé de contrôle volontairement fausse : ne doit pas
+  // faire échouer le rendu (la clé est recalculée à partir des 12 premiers)
+  await page.getByTestId('cb-valeur-unite').locator('input').fill('4006381333934')
+  await page.getByTestId('apercu-jour').click()
+  await expect(page.getByTestId('apercu-editeur')).toBeVisible()
+  await expect(page.getByText(/Code-barres invalide/)).not.toBeVisible()
+})
+
+test('valeur non numérique pour un EAN-13 → message d’erreur explicite à l’aperçu', async ({ page, request }) => {
+  const { id } = await (await request.post('/api/templates', { data: { nom: 'CB EAN invalide e2e' } })).json()
+
+  await page.goto(`/admin/templates/${id}`)
+  await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
+  await page.getByTestId('ajouter-code-barre').click()
+  await page.getByTestId('cb-type').click()
+  await page.getByText('EAN-13').click()
+  await page.getByTestId('cb-valeur-unite').locator('input').fill('ABCDEFGHIJKL')
+
+  await page.getByTestId('apercu-jour').click()
+  await expect(page.getByText(/Code-barres invalide/)).toBeVisible()
 })

@@ -88,6 +88,7 @@ watchEffect(async () => {
       hideDlc: !avecDlc.value,
       hideDate: !avecDate.value,
       hideQuantite: !modeCarton.value,
+      carton: modeCarton.value,
     })
     if (jeton === rendu) apercu.value = png
   } catch (e) {

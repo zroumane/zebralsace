@@ -63,41 +63,6 @@ async function validerRenommage() {
   message.success(`Renommé en « ${nom} »`)
 }
 
-// --- génération de code-barres (bwip-js, 100 % locale) ---
-const cbNom = ref('')
-const cbType = ref('ean13')
-const cbValeur = ref('')
-
-async function genererCodeBarres() {
-  const nom = cbNom.value.trim()
-  if (!nom) {
-    message.error('Donnez un nom au code-barres')
-    return
-  }
-  try {
-    const { default: bwipjs } = await import('bwip-js')
-    const c = document.createElement('canvas')
-    const opts: Record<string, unknown> = {
-      bcid: cbType.value,
-      text: cbValeur.value.trim(),
-      scale: Math.max(2, Math.round(dpi.value / 100)),
-    }
-    if (cbType.value !== 'qrcode') {
-      opts.height = 12
-      opts.includetext = true
-      opts.textxalign = 'center'
-    }
-    bwipjs.toCanvas(c, opts as never)
-    await api.post('/api/logos', { nom, type: 'code-barres', png: c.toDataURL('image/png') })
-    cbNom.value = ''
-    cbValeur.value = ''
-    await charger()
-    message.success(`« ${nom} » ajouté à la bibliothèque`)
-  } catch (e) {
-    message.error(`Code-barres invalide : ${String((e as Error).message ?? e)}`)
-  }
-}
-
 async function supprimer(l: Logo) {
   await api.del(`/api/logos/${l.id}`)
   await charger()
@@ -129,26 +94,6 @@ async function surDrop(cible: Logo | null) {
       <p v-else class="note">Optimisée à l'import (noir et blanc, résolution configurée).</p>
     </section>
 
-    <section>
-      <h2>Générer un code-barres</h2>
-      <label>Nom <n-input v-model:value="cbNom" data-testid="cb-nom" placeholder="ex. EAN Quiche 500 g" /></label>
-      <n-select
-        v-model:value="cbType"
-        :options="[
-          { label: 'EAN-13 (produit)', value: 'ean13' },
-          { label: 'Code 128 (alphanumérique)', value: 'code128' },
-          { label: 'QR Code', value: 'qrcode' },
-        ]"
-      />
-      <n-input
-        v-model:value="cbValeur"
-        data-testid="cb-valeur"
-        placeholder="Valeur (12 chiffres pour un EAN-13)"
-        @keyup.enter="genererCodeBarres"
-      />
-      <n-button type="primary" data-testid="cb-generer" @click="genererCodeBarres">Générer</n-button>
-    </section>
-
     <section class="biblio">
       <h2>Bibliothèque</h2>
       <p class="note">Disponible dans l'éditeur de tous les modèles.</p>
@@ -171,9 +116,7 @@ async function surDrop(cible: Logo | null) {
             </span>
           </figcaption>
         </figure>
-        <p v-if="!logos.length" class="note">
-          Aucun média — importez une image ou générez un code-barres.
-        </p>
+        <p v-if="!logos.length" class="note">Aucun média — importez une image.</p>
       </div>
     </section>
 
