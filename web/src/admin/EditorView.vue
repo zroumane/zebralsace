@@ -523,6 +523,12 @@ function surTouche(e: KeyboardEvent) {
     void retablir()
     return
   }
+  // Ctrl/Cmd+S = enregistrer (au lieu d'ouvrir la boîte de dialogue native du navigateur)
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault()
+    if (modifie.value || jamaisEnregistre.value) void enregistrer()
+    return
+  }
   const actif: any = c.getActiveObject()
   // un champ du panneau (ex. Largeur/Hauteur) répond aussi aux flèches : ne
   // pas lui voler l'appui pour déplacer l'objet sélectionné en même temps

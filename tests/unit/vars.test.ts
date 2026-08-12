@@ -34,6 +34,9 @@ describe('dates', () => {
   it('poids carton : conserve les décimales nécessaires (grammes non ronds en kg)', () => {
     expect(computeVars([], BASE, BASE, 17, 249, true).poids).toBe('4,233 KG') // 17×249g = 4233g
   })
+  it('poids carton sous 1 kg : reste en grammes (total, pas le poids unitaire)', () => {
+    expect(computeVars([], BASE, BASE, 2, 100, true).poids).toBe('200 G') // 2×100g = 200g < 1kg
+  })
 })
 
 describe('substituteWithStyles', () => {

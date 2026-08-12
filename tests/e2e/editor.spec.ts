@@ -15,6 +15,24 @@ test('éditeur : chargement, renommage, sauvegarde avec vignette', async ({ page
   expect(t.vignette_png).toMatch(/^data:image\/png/)
 })
 
+test('Ctrl+S enregistre (sans ouvrir la boîte de dialogue native du navigateur)', async ({ page, request }) => {
+  const { id } = await (await request.post('/api/templates', { data: { nom: 'Ctrl+S e2e' } })).json()
+
+  await page.goto(`/admin/templates/${id}`)
+  await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
+  await expect(page.getByTestId('ajouter-texte')).toBeEnabled()
+
+  await page.getByTestId('ajouter-texte').click()
+  await expect(page.getByTestId('enregistrer')).toBeEnabled()
+
+  await page.keyboard.press('Control+s')
+  await expect(page.getByText('Modèle enregistré')).toBeVisible()
+  await expect(page.getByTestId('enregistrer')).toBeDisabled() // plus rien à enregistrer
+
+  const t = await (await request.get(`/api/templates/${id}`)).json()
+  expect(t.doc_json).toContain('Textbox')
+})
+
 test('zoom à la molette avec Ctrl', async ({ page, request }) => {
   const { id } = await (await request.post('/api/templates', { data: { nom: 'Zoom e2e' } })).json()
 
