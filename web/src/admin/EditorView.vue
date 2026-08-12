@@ -225,7 +225,7 @@ function protegerObjet(o: any) {
   if (o.text !== undefined) {
     // il ne reste que ml/mr (largeur de reformatage, sans étirer) et la rotation
     o.setControlsVisibility({ tl: false, tr: false, bl: false, br: false, mt: false, mb: false })
-    o.splitByGrapheme = true // les anciens textes adoptent la coupe à la bordure
+    o.splitByGrapheme = false // retour à la ligne par mot entier (les anciens textes aussi)
   } else {
     o.setControlsVisibility({ ml: false, mr: false, mt: false, mb: false })
     o.lockScalingFlip = true
@@ -241,9 +241,10 @@ function ajouterTexte() {
     fontFamily: 'Roboto',
     fontSize: mmToPx(3, dpi.value),
     fill: '#000000',
-    // retour à la ligne forcé à la bordure du bloc, même au milieu d'un mot
-    // trop long (sérialisé : l'impression coupe exactement comme l'éditeur)
-    splitByGrapheme: true,
+    // retour à la ligne par mot entier (jamais coupé en plein milieu) ; un mot
+    // seul plus large que le bloc n'est pas coupé et déborde visuellement
+    // (sérialisé : l'impression coupe exactement comme l'éditeur)
+    splitByGrapheme: false,
   })
   protegerObjet(t)
   c.add(t)
@@ -295,6 +296,10 @@ watch(selection, (s: any) => {
 // toute modification faite depuis le panneau est une vraie modification :
 // on déclenche object:modified pour le traqueur (Enregistrer) et l'historique
 function toucher(o: any) {
+  // Textbox.initDimensions() (fabric) ne marque jamais l'objet "dirty" après un
+  // setSelectionStyles (gras/italique/souligné/couleur sur une portion) : le
+  // cache de rendu garde l'ancien bitmap tant que rien ne force sa régénération.
+  o.dirty = true
   canvas.value!.fire('object:modified', { target: o } as any)
   canvas.value!.requestRenderAll()
 }
