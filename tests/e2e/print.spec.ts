@@ -46,7 +46,7 @@ test('impression de bout en bout depuis le kiosque', async ({ page, request }) =
   imprimante.close()
 })
 
-test('étiquette carton : rien à choisir — pas de champ de quantité affiché, 1 seule étiquette imprimée', async ({
+test('étiquette carton : quantité affichée dessus figée, mais nombre d’étiquettes à imprimer choisissable (1 par défaut)', async ({
   page,
   request,
 }) => {
@@ -63,13 +63,18 @@ test('étiquette carton : rien à choisir — pas de champ de quantité affiché
   await page.getByTestId(`template-${id}`).click()
   await page.getByTestId('mode-carton').click()
 
-  // aucun champ de quantité en mode carton : la valeur vient du modèle, rien à choisir
+  // la quantité affichée SUR l'étiquette (x24) reste figée : aucun champ pour elle
   await expect(page.getByTestId('quantite-carton')).toHaveCount(0)
-  await expect(page.getByTestId('quantite')).toHaveCount(0)
+  // mais le nombre d'étiquettes à IMPRIMER, lui, se choisit — 1 par défaut
+  const champQuantite = page.getByTestId('quantite-carton-a-imprimer').locator('input')
+  await expect(champQuantite).toHaveValue('1')
+  await champQuantite.fill('3')
 
   await page.getByTestId('imprimer').click()
   await expect(page.getByText(/ajoutée/)).toBeVisible()
-  await expect.poll(() => imprimante.recu.join('')).toContain('^PQ1') // 1 étiquette, quel que soit quantite_carton
+  await expect.poll(() => imprimante.recu.join('')).toContain('^PQ3') // 3 étiquettes demandées
+  const log = await (await request.get('/api/print-log')).json()
+  expect(log[0]).toMatchObject({ template_nom: 'Carton figé e2e', quantite: 3, statut: 'ok' })
   imprimante.close()
 })
 

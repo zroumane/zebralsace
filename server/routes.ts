@@ -312,9 +312,21 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     if (req.query.statut) { clauses.push('statut = ?'); params.push(String(req.query.statut)) }
     if (req.query.from) { clauses.push('date(date_heure) >= ?'); params.push(String(req.query.from)) }
     if (req.query.to) { clauses.push('date(date_heure) <= ?'); params.push(String(req.query.to)) }
+    if (req.query.template_nom) { clauses.push('template_nom = ?'); params.push(String(req.query.template_nom)) }
     const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
     res.json(
       db.prepare(`SELECT * FROM print_log ${where} ORDER BY date_heure DESC, id DESC LIMIT 500`).all(...params)
+    )
+  })
+
+  // noms de modèles distincts déjà présents dans l'historique (peut inclure des
+  // modèles renommés/supprimés depuis) — alimente le filtre de l'onglet Historique
+  api.get('/print-log/modeles', (_req, res) => {
+    res.json(
+      db
+        .prepare('SELECT DISTINCT template_nom FROM print_log ORDER BY template_nom COLLATE NOCASE')
+        .all()
+        .map((r: any) => r.template_nom)
     )
   })
 

@@ -26,11 +26,16 @@ watch(fabrication, (v) => {
     peremption.value = versIso(addDays(new Date(v), template.value.dlc_jours))
 })
 
-// étiquette carton : toujours une seule étiquette imprimée, quel que soit le
-// sélecteur de lot ci-dessous. La quantité affichée dessus ({{quantite}})
-// n'est plus modifiable au moment de l'impression — figée sur celle réglée
-// dans le modèle (Administration → modèle → Quantité carton).
+// étiquette carton : la quantité affichée dessus ({{quantite}}) n'est pas
+// modifiable au moment de l'impression — figée sur celle réglée dans le
+// modèle (Administration → modèle → Quantité carton). Le nombre d'étiquettes
+// À IMPRIMER, lui, reste choisissable comme en mode Lot (ex. plusieurs
+// cartons identiques à étiqueter d'un coup) — 1 par défaut.
 const modeCarton = ref(false)
+const quantiteCarton = ref(1)
+function ajouterQuantiteCarton(n: number) {
+  quantiteCarton.value = Math.min(99999999, Math.max(1, quantiteCarton.value + n))
+}
 
 // Lot d'étiquettes : la quantité par défaut reprend celle du modèle (un
 // carton d'un coup, le cas le plus courant), modifiable ensuite au cas par
@@ -53,7 +58,7 @@ function ajouterQuantite(n: number) {
   quantite.value = Math.min(99999999, Math.max(1, quantite.value + n))
   quantiteTouchee.value = true
 }
-const quantiteFinale = computed(() => (modeCarton.value ? 1 : quantite.value))
+const quantiteFinale = computed(() => (modeCarton.value ? quantiteCarton.value : quantite.value))
 const apercu = ref('')
 const impressionEnCours = ref(false)
 const globales = ref<Globale[]>([])
@@ -204,6 +209,20 @@ async function imprimer() {
             <div class="ligne-pas">
               <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-10)">−10</n-button>
               <n-button secondary @click="ajouterQuantite(10)">+10</n-button>
+            </div>
+          </div>
+          <div v-else class="quantite">
+            <p class="info-carton">Nombre de carton :</p>
+            <div class="ligne-principale">
+              <n-button secondary :disabled="quantiteCarton <= 1" @click="ajouterQuantiteCarton(-1)">−</n-button>
+              <n-input-number
+                v-model:value="quantiteCarton"
+                :min="1"
+                :max="99999999"
+                :show-button="false"
+                data-testid="quantite-carton-a-imprimer"
+              />
+              <n-button secondary @click="ajouterQuantiteCarton(1)">+</n-button>
             </div>
           </div>
 
