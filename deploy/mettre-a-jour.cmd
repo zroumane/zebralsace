@@ -13,20 +13,21 @@ if not exist deploy\cle-deploiement (
   type deploy\cle-deploiement.pub
   echo.
   echo Puis relancez ce script.
+  pause
   exit /b 0
 )
 
 set GIT_SSH_COMMAND=ssh -i deploy/cle-deploiement -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new
 echo Recuperation de la derniere version...
-git fetch --tags --force origin || exit /b 1
+git fetch --tags --force origin || (pause & exit /b 1)
 rem Les machines clientes suivent la derniere version TAGUEE ; sans tag, repli sur main.
 set TAG=
 for /f "delims=" %%t in ('git tag --sort=-v:refname') do if not defined TAG set TAG=%%t
 if defined TAG (
   echo Passage a la version %TAG%
-  git checkout -q %TAG% || exit /b 1
+  git checkout -q %TAG% || (pause & exit /b 1)
 ) else (
-  git pull --ff-only || exit /b 1
+  git pull --ff-only || (pause & exit /b 1)
 )
 rem La tache planifiee garde npm run start (et esbuild.exe) ouvert en permanence ;
 rem sous Windows (contrairement a Linux) npm ci ne peut pas remplacer un fichier
@@ -35,11 +36,12 @@ echo Arret de l'application...
 schtasks /end /tn Zebralsace >nul 2>&1
 timeout /t 2 /nobreak >nul
 
-call npm ci || exit /b 1
-call npm run build || exit /b 1
+call npm ci || (pause & exit /b 1)
+call npm run build || (pause & exit /b 1)
 
 echo Redemarrage de l'application...
 schtasks /run /tn Zebralsace >nul 2>&1
 
 echo Mise a jour terminee.
 echo Installation via NSSM au lieu de la tache planifiee : redemarrez avec "nssm restart zebra-etiquettes".
+pause
