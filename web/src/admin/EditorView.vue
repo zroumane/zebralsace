@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { h, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { Canvas, FabricImage, FabricText, Group, Line, Rect, Textbox } from 'fabric'
 import { useMessage } from 'naive-ui'
@@ -283,7 +283,7 @@ async function construireRepereCodeBarre(type: string): Promise<FabricImage> {
 
 async function ajouterCodeBarre() {
   const c = canvas.value!
-  const d: DonneesCodeBarre = { type: 'gln', valeurUnite: '', valeurCarton: '' }
+  const d: DonneesCodeBarre = { type: 'gtin', valeurUnite: '', valeurCarton: '' }
   const img = await construireRepereCodeBarre(d.type)
   ;(img as any).codeBarre = { ...d }
   img.set({ left: mmToPx(5, dpi.value), top: mmToPx(5, dpi.value) })
@@ -394,10 +394,9 @@ function insererVariable(v: string) {
 onMounted(async () => {
   template.value = await api.get<Template>(`/api/templates/${route.params.id}`)
   empreinteProps.value = proprietes()
-  const reglages = await api.get<Record<string, string>>('/api/settings')
-  dpi.value = Number(reglages.dpi)
-  laize.value = Number(reglages.laize_mm ?? 104)
-  await Promise.all(POLICES.map((f) => document.fonts.load(f)))
+  // le <canvas> n'existe dans le DOM qu'une fois template.value posé (v-if) :
+  // un tick est nécessaire avant de pouvoir lire canvasEl.value.
+  await nextTick()
 
   const c = new Canvas(canvasEl.value!, {
     backgroundColor: '#ffffff',
@@ -405,7 +404,17 @@ onMounted(async () => {
     // poignées d'angle libres (pas de ratio verrouillé) ; Maj enfoncée = ratio conservé
     uniformScaling: false,
   })
+  // dispo dès ici, avant les requêtes suivantes : les boutons "+ ..." et la
+  // bibliothèque de médias ne doivent jamais pouvoir cliquer sur un canevas
+  // pas encore prêt (ils ne dépendent que de canvas.value, pas de dpi/laize
+  // qui ont déjà des valeurs par défaut sensées le temps de leur chargement).
   canvas.value = c
+
+  const reglages = await api.get<Record<string, string>>('/api/settings')
+  dpi.value = Number(reglages.dpi)
+  laize.value = Number(reglages.laize_mm ?? 104)
+  await Promise.all(POLICES.map((f) => document.fonts.load(f)))
+
   await c.loadFromJSON(JSON.parse(template.value.doc_json))
   // loadFromJSON réinitialise backgroundColor à undefined (voir render.ts) : on la réapplique.
   c.backgroundColor = '#ffffff'
@@ -675,39 +684,48 @@ const valNut = ref<ValeursNutritionnelles>(NUT_DEFAUT())
 function construireTableau(v: ValeursNutritionnelles): Group {
   const mm = (x: number) => mmToPx(x, dpi.value)
   const largeur = mm(60)
-  const pad = mm(2)
+  const pad = mm(1.2)
   const ligneH = mm(4.6)
   const police = { fontFamily: 'Roboto', fill: '#000000' }
   const elements: any[] = []
   let y = pad
+  // position réelle du bas du dernier élément dessiné (texte ou trait) —
+  // distincte de `y` (qui anticipe l'espace d'une éventuelle ligne suivante,
+  // via ligneH/mm(0.6)) : utiliser `y` pour la hauteur du cadre laissait un
+  // vide bien plus grand en bas qu'en haut, cet espace anticipé n'ayant
+  // jamais servi puisqu'il n'y a pas de ligne après la dernière.
+  let bas = y
 
-  elements.push(
-    new Textbox(v.titre, {
-      left: 0,
-      top: y,
-      width: largeur,
-      fontSize: mm(3),
-      fontWeight: '700',
-      textAlign: 'center',
-      ...police,
-    })
-  )
+  const titre = new Textbox(v.titre, {
+    left: 0,
+    top: y,
+    width: largeur,
+    fontSize: mm(3),
+    fontWeight: '700',
+    textAlign: 'center',
+    ...police,
+  })
+  elements.push(titre)
+  bas = y + titre.height!
   y += ligneH
   elements.push(new Line([pad / 2, y, largeur - pad / 2, y], { stroke: '#000000', strokeWidth: 2 }))
+  bas = y
   y += mm(1)
 
   for (const l of LIGNES_NUT) {
     const valeur = v[l.cle].trim()
     if (!valeur) continue
-    elements.push(new FabricText(l.label, { left: pad, top: y, fontSize: mm(2.8), ...police }))
+    const label = new FabricText(l.label, { left: pad, top: y, fontSize: mm(2.8), ...police })
+    elements.push(label)
     const t = new FabricText(valeur, { fontSize: mm(2.8), ...police })
     t.set({ left: largeur - pad - t.width!, top: y })
     elements.push(t)
+    bas = y + label.height!
     y += ligneH
     if (l.sep) {
-      elements.push(
-        new Line([pad / 2, y - mm(0.7), largeur - pad / 2, y - mm(0.7)], { stroke: '#000000', strokeWidth: 2 })
-      )
+      const ySep = y - mm(0.7)
+      elements.push(new Line([pad / 2, ySep, largeur - pad / 2, ySep], { stroke: '#000000', strokeWidth: 2 }))
+      bas = ySep
       y += mm(0.6)
     }
   }
@@ -717,7 +735,7 @@ function construireTableau(v: ValeursNutritionnelles): Group {
       left: 0,
       top: 0,
       width: largeur,
-      height: y + pad,
+      height: bas + pad,
       fill: 'transparent',
       stroke: '#000000',
       strokeWidth: 3,
@@ -774,7 +792,7 @@ watch(
 // qu'une régénération périmée (bwip-js asynchrone) n'écrase un état plus
 // récent ; le drapeau évite que le rechargement de la sélection (même
 // contenu) ne redéclenche une régénération.
-const codeBarre = ref<DonneesCodeBarre>({ type: 'gln', valeurUnite: '', valeurCarton: '' })
+const codeBarre = ref<DonneesCodeBarre>({ type: 'gtin', valeurUnite: '', valeurCarton: '' })
 let cbEnChargement = false
 let cbJeton = 0
 watch(selection, (s: any) => {

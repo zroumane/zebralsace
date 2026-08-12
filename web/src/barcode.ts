@@ -14,19 +14,19 @@ export interface CodeBarreRendu {
   height: number
 }
 
-// GLN (GS1) en premier et par défaut : identifiant de lieu-fonction GS1, le
-// plus utilisé ici. Encodé en Code 128 brut (juste les 13 chiffres, sans
-// l'habillage GS1-128/AI 414) — un choix délibéré, plus lisible visuellement,
+// GTIN (GS1) en premier et par défaut : identifiant produit GS1, le plus
+// utilisé ici. Encodé en Code 128 brut (juste les 13 chiffres, sans
+// l'habillage GS1-128/AI 01) — un choix délibéré, plus lisible visuellement,
 // au prix de ne plus être un GS1-128 strictement normalisé.
 export const TYPES_CODE_BARRE = [
-  { label: 'GLN (GS1, localisation)', value: 'gln' },
+  { label: 'GTIN (GS1, produit)', value: 'gtin' },
   { label: 'EAN-13 (produit)', value: 'ean13' },
   { label: 'Code 128 (alphanumérique)', value: 'code128' },
   { label: 'QR Code', value: 'qrcode' },
 ]
 
 // Clé de contrôle GS1/EAN Mod10 à partir des 12 premiers chiffres — même
-// algorithme pour un EAN-13 que pour un GLN.
+// algorithme pour un EAN-13 que pour un GTIN.
 function cleControleGS1(douzeChiffres: string): string {
   let somme = 0
   for (let i = 0; i < 12; i++) {
@@ -45,8 +45,8 @@ export async function rendreCodeBarre(o: OptionsCodeBarre): Promise<CodeBarreRen
     // premiers (natif à ean13) — une clé mal recopiée depuis l'emballage ne
     // doit pas faire échouer tout le code-barres.
     valeur = valeur.slice(0, 12)
-  } else if (o.type === 'gln') {
-    // GLN : pas de symbologie dédiée — Code 128 brut sur les 13 chiffres.
+  } else if (o.type === 'gtin') {
+    // GTIN : pas de symbologie dédiée — Code 128 brut sur les 13 chiffres.
     // Une clé de contrôle mal recopiée (ou absente, 12 chiffres tapés) est
     // recalculée, même tolérance qu'un EAN-13.
     bcid = 'code128'

@@ -57,13 +57,13 @@ test('aperçu : la bascule unité/carton change le rendu affiché', async ({ pag
   await expect.poll(() => apercu.getAttribute('src')).not.toBe(srcUnite)
 })
 
-test('le GLN est le type par défaut, et une clé de contrôle erronée est tolérée', async ({ page, request }) => {
-  const { id } = await (await request.post('/api/templates', { data: { nom: 'CB GLN e2e' } })).json()
+test('le GTIN est le type par défaut, et une clé de contrôle erronée est tolérée', async ({ page, request }) => {
+  const { id } = await (await request.post('/api/templates', { data: { nom: 'CB GTIN e2e' } })).json()
 
   await page.goto(`/admin/templates/${id}`)
   await expect(page.locator('.zone-canvas canvas').first()).toBeVisible()
   await page.getByTestId('ajouter-code-barre').click()
-  await expect(page.getByTestId('cb-type')).toContainText('GLN')
+  await expect(page.getByTestId('cb-type')).toContainText('GTIN')
 
   // 13 chiffres avec une clé de contrôle volontairement fausse : ne doit pas
   // faire échouer le rendu (la clé est recalculée à partir des 12 premiers)
