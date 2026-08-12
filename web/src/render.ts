@@ -19,6 +19,7 @@ export interface RenderOpts {
   baseDate: Date | string
   hideDlc: boolean
   hideDate?: boolean
+  hideQuantite?: boolean
   multiplier?: number
 }
 
@@ -45,7 +46,9 @@ export async function renderLabel(doc: any, o: RenderOpts): Promise<string> {
     enableRetinaScaling: false,
   })
   try {
-    await canvas.loadFromJSON(hydrateDoc(doc, o.vars, new Date(o.baseDate), o.hideDlc, o.hideDate ?? false))
+    await canvas.loadFromJSON(
+      hydrateDoc(doc, o.vars, new Date(o.baseDate), o.hideDlc, o.hideDate ?? false, o.hideQuantite ?? false)
+    )
     // loadFromJSON réinitialise backgroundColor à undefined quand le doc n'a pas de clé "background"
     // (notre format de template n'en a pas) : on la réapplique après le chargement.
     canvas.backgroundColor = '#ffffff'

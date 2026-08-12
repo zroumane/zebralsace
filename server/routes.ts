@@ -93,11 +93,11 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   api.post('/templates', (req, res) => {
     const nom = String(req.body?.nom ?? '').trim()
     if (!nom) return res.status(400).json({ erreur: 'nom requis' })
-    // taille par défaut explicite : vaut aussi pour les bases créées avant ce défaut.
+    // taille/DLC/quantité par défaut explicites : valent aussi pour les bases créées avant ces défauts.
     // position MIN-1 : un nouveau modèle prend la première place de sa section
     const r = db
       .prepare(
-        'INSERT INTO templates (nom, largeur_mm, hauteur_mm, position) VALUES (?, 85, 55, (SELECT COALESCE(MIN(position), 1) - 1 FROM templates))'
+        'INSERT INTO templates (nom, largeur_mm, hauteur_mm, dlc_jours, quantite_carton, position) VALUES (?, 85, 55, 365, 15, (SELECT COALESCE(MIN(position), 1) - 1 FROM templates))'
       )
       .run(nom)
     res.status(201).json(templateParId.get(r.lastInsertRowid))
@@ -167,7 +167,7 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   api.put('/templates/:id', (req, res) => {
     const t = templateParId.get(req.params.id)
     if (!t) return res.status(404).json({ erreur: 'template introuvable' })
-    const champs = ['nom', 'largeur_mm', 'hauteur_mm', 'dlc_jours', 'doc_json', 'vignette_png', 'categorie', 'position']
+    const champs = ['nom', 'largeur_mm', 'hauteur_mm', 'dlc_jours', 'quantite_carton', 'doc_json', 'vignette_png', 'categorie', 'position']
     const maj = champs.filter((c) => req.body[c] !== undefined)
     if (maj.includes('nom') && !String(req.body.nom ?? '').trim())
       return res.status(400).json({ erreur: 'nom requis' })
@@ -190,9 +190,9 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     const nom = String(req.body?.nom ?? '').trim() || `${t.nom} (copie)`
     const r = db
       .prepare(
-        'INSERT INTO templates (nom, largeur_mm, hauteur_mm, dlc_jours, doc_json, vignette_png, categorie, position) VALUES (?,?,?,?,?,?,?,?)'
+        'INSERT INTO templates (nom, largeur_mm, hauteur_mm, dlc_jours, quantite_carton, doc_json, vignette_png, categorie, position) VALUES (?,?,?,?,?,?,?,?,?)'
       )
-      .run(nom, t.largeur_mm, t.hauteur_mm, t.dlc_jours, t.doc_json, t.vignette_png, t.categorie, t.position)
+      .run(nom, t.largeur_mm, t.hauteur_mm, t.dlc_jours, t.quantite_carton, t.doc_json, t.vignette_png, t.categorie, t.position)
     res.status(201).json(templateParId.get(r.lastInsertRowid))
   })
 

@@ -25,6 +25,7 @@ const proprietes = () =>
     template.value?.largeur_mm,
     template.value?.hauteur_mm,
     template.value?.dlc_jours,
+    template.value?.quantite_carton,
   ])
 // ébauche créée par « + Nouveau modèle », jamais enregistrée par l'utilisateur
 const jamaisEnregistre = ref(route.query.neuf === '1')
@@ -434,6 +435,7 @@ watch(
     () => template.value?.largeur_mm,
     () => template.value?.hauteur_mm,
     () => template.value?.dlc_jours,
+    () => template.value?.quantite_carton,
   ],
   () => {
     if (empreinteProps.value && proprietes() !== empreinteProps.value) modifie.value = true
@@ -481,7 +483,7 @@ async function rendreCourant(multiplier: number): Promise<string> {
     widthMm: t.largeur_mm,
     heightMm: t.hauteur_mm,
     dpi: dpi.value,
-    vars: computeVars(globales, auj, addDays(auj, t.dlc_jours)),
+    vars: computeVars(globales, auj, addDays(auj, t.dlc_jours), t.quantite_carton),
     baseDate: auj,
     hideDlc: false,
     multiplier,
@@ -719,6 +721,7 @@ async function enregistrer() {
       largeur_mm: t.largeur_mm,
       hauteur_mm: t.hauteur_mm,
       dlc_jours: t.dlc_jours,
+      quantite_carton: t.quantite_carton,
       // toObject(['tableauNutritionnel']) : conserve les valeurs des tableaux
       // nutritionnels pour pouvoir les rééditer
       doc_json: JSON.stringify(canvas.value!.toObject(['tableauNutritionnel'])),
@@ -880,8 +883,9 @@ async function enregistrer() {
 
         <b>Variables</b>
         <label>DLC (jours) <n-input-number v-model:value="template.dlc_jours" :min="0" :max="365" size="small" style="width: 100px" /></label>
+        <label>Quantité carton <n-input-number v-model:value="template.quantite_carton" :min="1" :max="999999" size="small" style="width: 100px" /></label>
         <n-button
-          v-for="v in ['{{date}}', '{{dlc}}', ...globales.map((g) => `{{${g.cle}}}`)]"
+          v-for="v in ['{{date}}', '{{dlc}}', '{{quantite}}', ...globales.map((g) => `{{${g.cle}}}`)]"
           :key="v"
           size="small"
           tertiary

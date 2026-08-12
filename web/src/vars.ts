@@ -19,12 +19,17 @@ export function addDays(d: Date, n: number): Date {
 export function computeVars(
   globales: { cle: string; valeur: string }[],
   fabrication: Date,
-  peremption: Date
+  peremption: Date,
+  quantiteCarton: number
 ): Record<string, string> {
   return {
-    ...Object.fromEntries(globales.map((g) => [g.cle, g.valeur])),
+    // un input de valeur globale reste sur une ligne (impossible d'y taper un
+    // vrai retour à la ligne) : "\n" littéral tapé par l'utilisateur devient
+    // un vrai saut de ligne une fois substitué sur l'étiquette
+    ...Object.fromEntries(globales.map((g) => [g.cle, g.valeur.replaceAll('\\n', '\n')])),
     date: formatDate(fabrication),
     dlc: formatDate(peremption),
+    quantite: `x${quantiteCarton}`,
   }
 }
 
@@ -78,18 +83,28 @@ export function hydrateDoc(
   vars: Record<string, string>,
   baseDate: Date,
   hideDlc: boolean,
-  hideDate = false
+  hideDate = false,
+  hideQuantite = false
 ): any {
   const clone = structuredClone(doc)
-  const masquees = new Set<string>([...(hideDlc ? ['dlc'] : []), ...(hideDate ? ['date'] : [])])
-  // Un bloc n'est supprimé en entier que si toutes ses dates sont décochées.
-  // Bloc mixte (date + dlc) dont l'une reste visible : conservé, la variable
-  // cachée y est simplement effacée par la substitution.
+  const masquees = new Set<string>([
+    ...(hideDlc ? ['dlc'] : []),
+    ...(hideDate ? ['date'] : []),
+    ...(hideQuantite ? ['quantite'] : []),
+  ])
+  // Un bloc n'est supprimé en entier que si toutes les dates (date/dlc) qu'il
+  // contient sont cachées. Bloc mixte dont l'une reste visible : conservé, la
+  // variable cachée y est simplement effacée par la substitution.
+  // {{quantite}} suit une règle différente : jamais de suppression de bloc,
+  // seule sa valeur (le "x{{nombre}}") est effacée quand elle est masquée —
+  // le reste du texte du bloc (libellé, autres variables) reste affiché.
   clone.objects = (clone.objects ?? []).filter((o: any) => {
     if (typeof o.text !== 'string') return true
-    const aCacher = (hideDlc && DLC_RE.test(o.text)) || (hideDate && DATE_RE.test(o.text))
-    if (!aCacher) return true
-    return (!hideDlc && DLC_RE.test(o.text)) || (!hideDate && DATE_RE.test(o.text))
+    const presentes = [DLC_RE.test(o.text) && 'dlc', DATE_RE.test(o.text) && 'date'].filter(
+      (v): v is string => v !== false
+    )
+    if (!presentes.length) return true
+    return presentes.some((v) => !masquees.has(v))
   })
   for (const o of clone.objects) {
     if (typeof o.text === 'string') {

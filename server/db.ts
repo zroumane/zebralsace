@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS templates (
   nom TEXT NOT NULL,
   largeur_mm REAL NOT NULL DEFAULT 85,
   hauteur_mm REAL NOT NULL DEFAULT 55,
-  dlc_jours INTEGER NOT NULL DEFAULT 7,
+  dlc_jours INTEGER NOT NULL DEFAULT 365,
+  quantite_carton INTEGER NOT NULL DEFAULT 15,
   categorie TEXT NOT NULL DEFAULT '',
   position INTEGER NOT NULL DEFAULT 0,
   doc_json TEXT NOT NULL DEFAULT '{"objects":[]}',
@@ -73,6 +74,8 @@ const MIGRATIONS: string[] = [
   // v3 : catégories persistées (ordre, renommage, suppression) — la table est
   // déjà créée par le SCHEMA, on la peuple depuis les modèles existants
   `INSERT OR IGNORE INTO categories (nom) SELECT DISTINCT categorie FROM templates WHERE categorie <> '';`,
+  // v4 : quantité par carton — variable {{quantite}}, comme la DLC
+  `ALTER TABLE templates ADD COLUMN quantite_carton INTEGER NOT NULL DEFAULT 15;`,
 ]
 
 export function initDb(dataDir: string): Database.Database {

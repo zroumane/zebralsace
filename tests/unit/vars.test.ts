@@ -10,9 +10,13 @@ describe('dates', () => {
   it('addDays passe les fins de mois', () => {
     expect(formatDate(addDays(BASE, 30))).toBe('03/03/2026')
   })
-  it('computeVars fusionne globales et dates', () => {
-    const v = computeVars([{ cle: 'adresse', valeur: 'Lyon' }], BASE, addDays(BASE, 14))
-    expect(v).toEqual({ adresse: 'Lyon', date: '01/02/2026', dlc: '15/02/2026' })
+  it('computeVars fusionne globales, dates et quantité carton', () => {
+    const v = computeVars([{ cle: 'adresse', valeur: 'Lyon' }], BASE, addDays(BASE, 14), 15)
+    expect(v).toEqual({ adresse: 'Lyon', date: '01/02/2026', dlc: '15/02/2026', quantite: 'x15' })
+  })
+  it('computeVars convertit les \\n littéraux des globales en vrais sauts de ligne', () => {
+    const v = computeVars([{ cle: 'adresse', valeur: '12 rue X\\n69000 Lyon' }], BASE, BASE, 1)
+    expect(v.adresse).toBe('12 rue X\n69000 Lyon')
   })
 })
 
@@ -98,6 +102,14 @@ describe('hydrateDoc', () => {
     expect(h.objects[0].text).not.toContain('15/02/2026')
     // les deux masquées : le bloc disparaît
     expect(hydrateDoc(mixte, { date: 'x', dlc: 'y' }, BASE, true, true).objects).toHaveLength(0)
+  })
+  it('hideQuantite efface juste la valeur, ne supprime jamais le bloc (contrairement à dlc/date)', () => {
+    const doc5 = { objects: [{ type: 'Textbox', text: 'Qté {{quantite}}', styles: [] }] }
+    const h1 = hydrateDoc(doc5, { quantite: 'x15' }, BASE, false, false, false)
+    expect(h1.objects[0].text).toBe('Qté x15')
+    const h2 = hydrateDoc(doc5, { quantite: 'x15' }, BASE, false, false, true)
+    expect(h2.objects).toHaveLength(1)
+    expect(h2.objects[0].text).toBe('Qté ')
   })
   it('ne modifie pas le doc d\'origine', () => {
     hydrateDoc(doc, { dlc: 'x', date: 'y' }, BASE, false)

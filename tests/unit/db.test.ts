@@ -36,7 +36,7 @@ describe('db', () => {
 
   it('une base neuve est marquée au dernier schéma', () => {
     const db = tmpDb()
-    expect(db.pragma('user_version', { simple: true })).toBe(3)
+    expect(db.pragma('user_version', { simple: true })).toBe(4)
     const t = db.prepare("SELECT categorie, position FROM templates LIMIT 0").columns()
     expect(t.map((c) => c.name)).toEqual(['categorie', 'position'])
     expect(() => db.prepare('SELECT position FROM logos LIMIT 0').columns()).not.toThrow()
@@ -71,9 +71,10 @@ describe('db', () => {
     const t = db.prepare("SELECT * FROM templates WHERE nom = 'Ancien'").get() as any
     expect(t.categorie).toBe('')
     expect(t.position).toBe(0)
+    expect(t.quantite_carton).toBe(15)
     const l = db.prepare("SELECT * FROM logos WHERE nom = 'Vieux logo'").get() as any
     expect(l.position).toBe(0)
-    expect(db.pragma('user_version', { simple: true })).toBe(3)
+    expect(db.pragma('user_version', { simple: true })).toBe(4)
     expect(() => db.prepare('SELECT id, nom, position FROM categories LIMIT 0').columns()).not.toThrow()
   })
 

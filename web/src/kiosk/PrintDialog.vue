@@ -26,10 +26,22 @@ watch(fabrication, (v) => {
     peremption.value = versIso(addDays(new Date(v), template.value.dlc_jours))
 })
 
+// étiquette carton : toujours une seule étiquette imprimée, quel que soit le
+// sélecteur de lot ci-dessous — mais la quantité affichée dessus ({{quantite}})
+// reste modifiable au cas par cas, préremplie depuis le modèle (comme la DLC)
+const modeCarton = ref(false)
+const quantiteCarton = ref(template.value.quantite_carton)
+const quantiteCartonTouchee = ref(false)
+function ajusterQuantiteCarton(n: number) {
+  quantiteCarton.value = Math.max(1, quantiteCarton.value + n)
+  quantiteCartonTouchee.value = true
+}
+
 api.get<Template>(`/api/templates/${props.template.id}`).then((t) => {
   template.value = t
   if (!peremptionTouchee.value)
     peremption.value = versIso(addDays(new Date(fabrication.value), t.dlc_jours))
+  if (!quantiteCartonTouchee.value) quantiteCarton.value = t.quantite_carton
 })
 
 // cochée = la date figure sur l'étiquette et son champ est modifiable
@@ -40,6 +52,7 @@ const quantite = ref(1)
 function ajouterQuantite(n: number) {
   quantite.value = Math.min(99999999, Math.max(1, quantite.value + n))
 }
+const quantiteFinale = computed(() => (modeCarton.value ? 1 : quantite.value))
 const apercu = ref('')
 const impressionEnCours = ref(false)
 const globales = ref<Globale[]>([])
@@ -65,10 +78,16 @@ watchEffect(async () => {
       widthMm: template.value.largeur_mm,
       heightMm: template.value.hauteur_mm,
       dpi: dpi.value,
-      vars: computeVars(globales.value, new Date(fabrication.value), new Date(peremption.value)),
+      vars: computeVars(
+        globales.value,
+        new Date(fabrication.value),
+        new Date(peremption.value),
+        quantiteCarton.value
+      ),
       baseDate: new Date(fabrication.value),
       hideDlc: !avecDlc.value,
       hideDate: !avecDate.value,
+      hideQuantite: !modeCarton.value,
     })
     if (jeton === rendu) apercu.value = png
   } catch (e) {
@@ -91,11 +110,11 @@ async function imprimer() {
   try {
     await api.post('/api/print', {
       template_nom: template.value.nom,
-      quantite: quantite.value,
+      quantite: quantiteFinale.value,
       png: apercu.value,
     })
     message.success(
-      `${quantite.value} étiquette${quantite.value > 1 ? 's' : ''} ajoutée${quantite.value > 1 ? 's' : ''} à la file d'impression`
+      `${quantiteFinale.value} étiquette${quantiteFinale.value > 1 ? 's' : ''} ajoutée${quantiteFinale.value > 1 ? 's' : ''} à la file d'impression`
     )
     emit('close')
   } catch (e) {
@@ -121,6 +140,27 @@ async function imprimer() {
           <img class="apercu" :src="apercu" alt="aperçu de l'étiquette" data-testid="apercu" />
         </div>
         <div class="reglages">
+          <div class="mode-impression">
+            <button
+              type="button"
+              class="mode-bouton"
+              :class="{ actif: !modeCarton }"
+              data-testid="mode-lot"
+              @click="modeCarton = false"
+            >
+              Lot d'étiquettes
+            </button>
+            <button
+              type="button"
+              class="mode-bouton"
+              :class="{ actif: modeCarton }"
+              data-testid="mode-carton"
+              @click="modeCarton = true"
+            >
+              Étiquette carton
+            </button>
+          </div>
+
           <div class="dates">
             <div class="date-choix" :class="{ inactif: !avecDate }">
               <n-checkbox v-model:checked="avecDate" data-testid="avec-date">Date de fabrication</n-checkbox>
@@ -138,7 +178,8 @@ async function imprimer() {
             </div>
           </div>
 
-          <div class="quantite">
+          <div v-if="!modeCarton" class="quantite">
+            <p class="info-carton">Nombre d'étiquette :</p>
             <div class="ligne-principale">
               <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-1)">−</n-button>
               <n-input-number
@@ -157,6 +198,21 @@ async function imprimer() {
             <div class="ligne-pas">
               <n-button secondary :disabled="quantite <= 1" @click="ajouterQuantite(-10)">−10</n-button>
               <n-button secondary @click="ajouterQuantite(10)">+10</n-button>
+            </div>
+          </div>
+          <div v-else class="quantite">
+            <p class="info-carton">1 étiquette — quantité affichée dessus</p>
+            <div class="ligne-principale">
+              <n-button secondary :disabled="quantiteCarton <= 1" @click="ajusterQuantiteCarton(-1)">−</n-button>
+              <n-input-number
+                v-model:value="quantiteCarton"
+                :min="1"
+                :max="999999"
+                :show-button="false"
+                data-testid="quantite-carton"
+                @update:value="quantiteCartonTouchee = true"
+              />
+              <n-button secondary @click="ajusterQuantiteCarton(1)">+</n-button>
             </div>
           </div>
 
@@ -197,6 +253,13 @@ async function imprimer() {
 .apercu { width: 100%; height: 100%; object-fit: contain; border: 1px solid #e5e5e5; box-sizing: border-box; }
 /* tablette : cibles tactiles généreuses, tout en grand */
 .reglages { width: 540px; display: flex; flex-direction: column; gap: 24px; min-height: 0; overflow-y: auto; }
+.mode-impression { display: flex; gap: 12px; }
+.mode-bouton {
+  flex: 1; padding: 16px 10px; font: inherit; font-weight: 700; font-size: 18px;
+  border: 2px solid #e5e5e5; border-radius: 10px; background: #fff; color: #555; cursor: pointer;
+}
+.mode-bouton.actif { border-color: #c1121f; color: #c1121f; background: #fdecea; }
+.info-carton { font-size: 18px; color: #555; margin: 0; font-weight: 700; }
 /* chaque date sur sa propre ligne, IMPRIMER calé en bas de la colonne */
 .dates { display: flex; flex-direction: column; gap: 16px; }
 .btn-imprimer { margin-top: auto; --n-height: 90px !important; font-size: 28px; letter-spacing: 1px; }

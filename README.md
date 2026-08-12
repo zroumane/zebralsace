@@ -16,17 +16,18 @@ exactement ce qui sort de l'imprimante.
   **glisser-déposer** dans l'admin (ordre et catégorie), aperçu exact avec dates
   calculées automatiquement (fabrication, DLC = fabrication + durée du
   modèle), dates modifiables au moment d'imprimer, option « sans date de
-  péremption », quantité sans plafond, indicateur d'état imprimante en
-  direct (fin de papier, tête ouverte, pause…), file d'impression visible
-  avec l'état de chaque lot. Installable en PWA plein écran.
+  péremption », quantité sans plafond, ou mode **« Étiquette carton »**
+  (une seule étiquette, affichant la quantité par carton du modèle), indicateur
+  d'état imprimante en direct (fin de papier, tête ouverte, pause…), file
+  d'impression visible avec l'état de chaque lot. Installable en PWA plein écran.
 - **Éditeur visuel** (`/admin`) — glisser-déposer sur un canvas à l'échelle,
   grille magnétique, textes avec gras/italique **par portion** (allergènes en
   gras au milieu d'un paragraphe), variables `{{date}}`, `{{dlc}}`,
-  `{{date+N}}` et valeurs partagées, insertion de médias par titre avec
-  aperçu depuis la bibliothèque partagée, formes noir/blanc (rectangles à
-  bords arrondis ou carrés), **tableaux nutritionnels générés et
-  rééditables** (format INCO), annuler/rétablir (Ctrl+Z/Y), aperçu aux
-  valeurs du jour, impression de test.
+  `{{date+N}}`, `{{quantite}}` (quantité par carton, éditable par modèle) et
+  valeurs partagées, insertion de médias par titre avec aperçu depuis la
+  bibliothèque partagée, formes noir/blanc (rectangles à bords arrondis ou
+  carrés), **tableaux nutritionnels générés et rééditables** (format INCO),
+  annuler/rétablir (Ctrl+Z/Y), aperçu aux valeurs du jour, impression de test.
 - **Médias** — onglet dédié : bibliothèque partagée entre tous les modèles,
   import d'images nommées (optimisées noir et blanc à l'import) et
   **génération nommée de codes-barres EAN-13, Code 128 et QR** (100 %
