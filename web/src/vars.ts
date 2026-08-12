@@ -16,11 +16,20 @@ export function addDays(d: Date, n: number): Date {
   return r
 }
 
+// Convertit un poids en grammes vers un texte en kg, virgule française, sans
+// zéro ni virgule superflus (4200 -> "4,2", 4000 -> "4", 4235 -> "4,235").
+function formatKg(grammes: number): string {
+  const texte = (grammes / 1000).toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
+  return texte.replace('.', ',')
+}
+
 export function computeVars(
   globales: { cle: string; valeur: string }[],
   fabrication: Date,
   peremption: Date,
-  quantiteCarton: number
+  quantiteCarton: number,
+  poidsG: number,
+  carton: boolean
 ): Record<string, string> {
   return {
     // un input de valeur globale reste sur une ligne (impossible d'y taper un
@@ -30,6 +39,8 @@ export function computeVars(
     date: formatDate(fabrication),
     dlc: formatDate(peremption),
     quantite: `x${quantiteCarton}`,
+    // étiquette carton : poids total (quantité × poids unitaire), en kg
+    poids: carton ? `${formatKg(quantiteCarton * poidsG)} KG` : `${poidsG} G`,
   }
 }
 

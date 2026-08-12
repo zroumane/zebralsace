@@ -24,18 +24,21 @@ describe('templates', () => {
     expect(t.nom).toBe('Quiche')
     expect(t.largeur_mm).toBe(85)
     expect(t.hauteur_mm).toBe(55)
+    expect(t.poids_g).toBe(280)
 
     await request(app)
       .put(`/api/templates/${t.id}`)
-      .send({ dlc_jours: 21, doc_json: '{"objects":[1]}' })
+      .send({ dlc_jours: 21, poids_g: 350, doc_json: '{"objects":[1]}' })
       .expect(200)
 
     const { body: relu } = await request(app).get(`/api/templates/${t.id}`).expect(200)
     expect(relu.dlc_jours).toBe(21)
+    expect(relu.poids_g).toBe(350)
 
     const { body: copie } = await request(app).post(`/api/templates/${t.id}/duplicate`).expect(201)
     expect(copie.nom).toBe('Quiche (copie)')
     expect(copie.doc_json).toBe('{"objects":[1]}')
+    expect(copie.poids_g).toBe(350)
 
     await request(app).delete(`/api/templates/${copie.id}`).expect(200)
     await request(app).get(`/api/templates/${copie.id}`).expect(404)

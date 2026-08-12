@@ -27,6 +27,7 @@ const proprietes = () =>
     template.value?.hauteur_mm,
     template.value?.dlc_jours,
     template.value?.quantite_carton,
+    template.value?.poids_g,
   ])
 // ébauche créée par « + Nouveau modèle », jamais enregistrée par l'utilisateur
 const jamaisEnregistre = ref(route.query.neuf === '1')
@@ -480,6 +481,7 @@ watch(
     () => template.value?.hauteur_mm,
     () => template.value?.dlc_jours,
     () => template.value?.quantite_carton,
+    () => template.value?.poids_g,
   ],
   () => {
     if (empreinteProps.value && proprietes() !== empreinteProps.value) modifie.value = true
@@ -565,7 +567,7 @@ async function rendreCourant(multiplier: number, carton = false): Promise<string
     widthMm: t.largeur_mm,
     heightMm: t.hauteur_mm,
     dpi: dpi.value,
-    vars: computeVars(globales, auj, addDays(auj, t.dlc_jours), t.quantite_carton),
+    vars: computeVars(globales, auj, addDays(auj, t.dlc_jours), t.quantite_carton, t.poids_g, carton),
     baseDate: auj,
     hideDlc: false,
     hideQuantite: !carton,
@@ -874,6 +876,7 @@ async function enregistrer() {
       hauteur_mm: t.hauteur_mm,
       dlc_jours: t.dlc_jours,
       quantite_carton: t.quantite_carton,
+      poids_g: t.poids_g,
       // conserve les valeurs des tableaux nutritionnels et des codes-barres
       // (unité + carton) pour pouvoir les rééditer
       doc_json: JSON.stringify(canvas.value!.toObject(['tableauNutritionnel', 'codeBarre'])),
@@ -1055,8 +1058,9 @@ async function enregistrer() {
         <b>Variables</b>
         <label>DLC (jours) <n-input-number v-model:value="template.dlc_jours" :min="0" :max="365" size="small" style="width: 100px" /></label>
         <label>Quantité carton <n-input-number v-model:value="template.quantite_carton" :min="1" :max="999999" size="small" style="width: 100px" /></label>
+        <label>Poids unitaire (g) <n-input-number v-model:value="template.poids_g" :min="1" :max="999999" size="small" style="width: 100px" /></label>
         <n-button
-          v-for="v in ['{{date}}', '{{dlc}}', '{{quantite}}', ...globales.map((g) => `{{${g.cle}}}`)]"
+          v-for="v in ['{{date}}', '{{dlc}}', '{{quantite}}', '{{poids}}', ...globales.map((g) => `{{${g.cle}}}`)]"
           :key="v"
           size="small"
           tertiary

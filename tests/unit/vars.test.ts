@@ -11,12 +11,28 @@ describe('dates', () => {
     expect(formatDate(addDays(BASE, 30))).toBe('03/03/2026')
   })
   it('computeVars fusionne globales, dates et quantité carton', () => {
-    const v = computeVars([{ cle: 'adresse', valeur: 'Lyon' }], BASE, addDays(BASE, 14), 15)
-    expect(v).toEqual({ adresse: 'Lyon', date: '01/02/2026', dlc: '15/02/2026', quantite: 'x15' })
+    const v = computeVars([{ cle: 'adresse', valeur: 'Lyon' }], BASE, addDays(BASE, 14), 15, 280, false)
+    expect(v).toEqual({
+      adresse: 'Lyon',
+      date: '01/02/2026',
+      dlc: '15/02/2026',
+      quantite: 'x15',
+      poids: '280 G',
+    })
   })
   it('computeVars convertit les \\n littéraux des globales en vrais sauts de ligne', () => {
-    const v = computeVars([{ cle: 'adresse', valeur: '12 rue X\\n69000 Lyon' }], BASE, BASE, 1)
+    const v = computeVars([{ cle: 'adresse', valeur: '12 rue X\\n69000 Lyon' }], BASE, BASE, 1, 280, false)
     expect(v.adresse).toBe('12 rue X\n69000 Lyon')
+  })
+  it('poids : "{g} G" à l\'unité, quantité × poids en kg (virgule française) en carton', () => {
+    expect(computeVars([], BASE, BASE, 15, 280, false).poids).toBe('280 G')
+    expect(computeVars([], BASE, BASE, 15, 280, true).poids).toBe('4,2 KG') // 15×280g = 4200g
+  })
+  it('poids carton : pas de zéro ni virgule superflus sur un compte rond', () => {
+    expect(computeVars([], BASE, BASE, 10, 400, true).poids).toBe('4 KG') // 4000g = 4kg pile
+  })
+  it('poids carton : conserve les décimales nécessaires (grammes non ronds en kg)', () => {
+    expect(computeVars([], BASE, BASE, 17, 249, true).poids).toBe('4,233 KG') // 17×249g = 4233g
   })
 })
 

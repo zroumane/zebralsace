@@ -82,7 +82,9 @@ watchEffect(async () => {
         globales.value,
         new Date(fabrication.value),
         new Date(peremption.value),
-        quantiteCarton.value
+        quantiteCarton.value,
+        template.value.poids_g,
+        modeCarton.value
       ),
       baseDate: new Date(fabrication.value),
       hideDlc: !avecDlc.value,

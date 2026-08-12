@@ -27,6 +27,7 @@ export interface Template {
   hauteur_mm: number
   dlc_jours: number
   quantite_carton: number
+  poids_g: number
   categorie: string
   position: number
   doc_json: string
