@@ -19,7 +19,7 @@ export function addDays(d: Date, n: number): Date {
 // Convertit un poids en grammes vers un texte en kg, virgule française, sans
 // zéro ni virgule superflus (4200 -> "4,2", 4000 -> "4", 4235 -> "4,235").
 function formatKg(grammes: number): string {
-  const texte = (grammes / 1000).toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
+  const texte = (grammes / 1000).toFixed(1).replace(/0+$/, '').replace(/\.$/, '')
   return texte.replace('.', ',')
 }
 
