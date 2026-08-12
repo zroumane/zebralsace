@@ -206,10 +206,6 @@ async function imprimer() {
               <n-button secondary @click="ajouterQuantite(10)">+10</n-button>
             </div>
           </div>
-          <div v-else class="quantite">
-            <p class="info-carton">1 étiquette — quantité affichée dessus (réglée dans le modèle)</p>
-            <p class="quantite-carton-figee" data-testid="quantite-carton">× {{ template.quantite_carton }}</p>
-          </div>
 
           <n-button
             type="primary"
@@ -246,40 +242,33 @@ async function imprimer() {
    taille native (petite) au lieu de remplir l'espace disponible. */
 .zone-apercu { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 12px; box-sizing: border-box; }
 .apercu { width: 100%; height: 100%; object-fit: contain; border: 1px solid #e5e5e5; box-sizing: border-box; }
-/* tablette : cibles tactiles généreuses, tout en grand */
-.reglages { width: 540px; display: flex; flex-direction: column; gap: 24px; min-height: 0; overflow-y: auto; }
-.mode-impression { display: flex; gap: 12px; }
+/* tablette : cibles tactiles généreuses, mais sans excès */
+.reglages { width: 420px; display: flex; flex-direction: column; gap: 18px; min-height: 0; overflow-y: auto; }
+.mode-impression { display: flex; gap: 10px; }
 .mode-bouton {
-  flex: 1; padding: 16px 10px; font: inherit; font-weight: 700; font-size: 18px;
-  border: 2px solid #e5e5e5; border-radius: 10px; background: #fff; color: #555; cursor: pointer;
+  flex: 1; padding: 10px 8px; font: inherit; font-weight: 700; font-size: 15px;
+  border: 2px solid #e5e5e5; border-radius: 8px; background: #fff; color: #555; cursor: pointer;
 }
 .mode-bouton.actif { border-color: #c1121f; color: #c1121f; background: #fdecea; }
-.info-carton { font-size: 18px; color: #555; margin: 0; font-weight: 700; }
+.info-carton { font-size: 14px; color: #555; margin: 0; font-weight: 700; }
 /* chaque date sur sa propre ligne, IMPRIMER calé en bas de la colonne */
-.dates { display: flex; flex-direction: column; gap: 16px; }
-.btn-imprimer { margin-top: auto; --n-height: 90px !important; font-size: 28px; letter-spacing: 1px; }
-.date-choix { display: flex; flex-direction: column; gap: 8px; }
-.date-choix :deep(.n-checkbox) { --n-size: 30px !important; --n-font-size: 20px !important; align-items: center; }
+.dates { display: flex; flex-direction: column; gap: 12px; }
+.btn-imprimer { margin-top: auto; --n-height: 60px !important; font-size: 20px; letter-spacing: 1px; }
+.date-choix { display: flex; flex-direction: column; gap: 6px; }
+.date-choix :deep(.n-checkbox) { --n-size: 22px !important; --n-font-size: 15px !important; align-items: center; }
 .date-choix :deep(.n-checkbox__label) { font-weight: 700; }
-.date-choix input { font-size: 22px; padding: 16px 12px; border: 1px solid #ccc; border-radius: 8px; width: 100%; box-sizing: border-box; }
+.date-choix input { font-size: 15px; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; width: 100%; box-sizing: border-box; }
 .inactif input { opacity: 0.45; }
-/* − et + en grand de part et d'autre du champ, puis une ligne ±5 et une ligne ±10 */
-.quantite { display: flex; flex-direction: column; gap: 10px; }
-.quantite :deep(.n-button) { --n-height: 80px !important; height: 80px; font-size: 22px; }
-.quantite :deep(.n-input-number .n-input) { --n-height: 80px !important; --n-font-size: 38px !important; }
-.ligne-principale { display: flex; gap: 12px; align-items: stretch; }
+/* − et + de part et d'autre du champ, puis une ligne ±5 et une ligne ±10 */
+.quantite { display: flex; flex-direction: column; gap: 8px; }
+.quantite :deep(.n-button) { --n-height: 52px !important; height: 52px; font-size: 16px; }
+.quantite :deep(.n-input-number .n-input) { --n-height: 52px !important; --n-font-size: 24px !important; }
+.ligne-principale { display: flex; gap: 8px; align-items: stretch; }
 .ligne-principale :deep(.n-input-number) { flex: 1; min-width: 0; }
-.ligne-principale :deep(.n-button) { width: 90px; flex: none; font-size: 32px; }
-.ligne-pas { display: flex; gap: 12px; }
+.ligne-principale :deep(.n-button) { width: 60px; flex: none; font-size: 22px; }
+.ligne-pas { display: flex; gap: 8px; }
 .ligne-pas :deep(.n-button) { flex: 1; }
 .quantite :deep(.n-input-number input) { text-align: center; font-weight: 700; }
-/* figé (non modifiable) : même gabarit que le champ de saisie, fond neutre
-   pour signaler que ce n'est pas cliquable */
-.quantite-carton-figee {
-  height: 80px; margin: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 38px; font-weight: 700; background: #f7f7f7; border: 1px solid #e5e5e5;
-  border-radius: 8px; box-sizing: border-box; color: #555;
-}
-.bloque { font-size: 20px; }
+.bloque { font-size: 16px; }
 .bloque { color: #780000; font-weight: 700; margin: 0; }
 </style>

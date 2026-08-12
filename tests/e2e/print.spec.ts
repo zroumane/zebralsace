@@ -46,10 +46,14 @@ test('impression de bout en bout depuis le kiosque', async ({ page, request }) =
   imprimante.close()
 })
 
-test('étiquette carton : la quantité affichée est figée sur celle du modèle, non modifiable', async ({
+test('étiquette carton : rien à choisir — pas de champ de quantité affiché, 1 seule étiquette imprimée', async ({
   page,
   request,
 }) => {
+  const imprimante = await startFakePrinter()
+  await request.put('/api/settings', {
+    data: { printer_ip: '127.0.0.1', printer_port: String(imprimante.port) },
+  })
   const { id } = await (
     await request.post('/api/templates', { data: { nom: 'Carton figé e2e' } })
   ).json()
@@ -59,10 +63,14 @@ test('étiquette carton : la quantité affichée est figée sur celle du modèle
   await page.getByTestId(`template-${id}`).click()
   await page.getByTestId('mode-carton').click()
 
-  const affichage = page.getByTestId('quantite-carton')
-  await expect(affichage).toHaveText('× 24')
-  // ce n'est plus un champ de saisie : aucun input à l'intérieur
-  await expect(affichage.locator('input')).toHaveCount(0)
+  // aucun champ de quantité en mode carton : la valeur vient du modèle, rien à choisir
+  await expect(page.getByTestId('quantite-carton')).toHaveCount(0)
+  await expect(page.getByTestId('quantite')).toHaveCount(0)
+
+  await page.getByTestId('imprimer').click()
+  await expect(page.getByText(/ajoutée/)).toBeVisible()
+  await expect.poll(() => imprimante.recu.join('')).toContain('^PQ1') // 1 étiquette, quel que soit quantite_carton
+  imprimante.close()
 })
 
 test('IMPRIMER désactivé quand l’imprimante est déconnectée', async ({ page, request }) => {
