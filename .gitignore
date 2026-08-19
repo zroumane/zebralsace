@@ -1,6 +1,7 @@
 node_modules/
 deploy/cle-deploiement*
 data/
+logs/
 web/dist/
 .e2e-data/
 test-results/

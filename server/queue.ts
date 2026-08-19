@@ -33,14 +33,17 @@ export function createQueue(db: Database.Database) {
       let job: JobInterne | undefined
       while ((job = jobs.find((j) => j.etat === 'en_attente'))) {
         job.etat = 'envoi'
-        const s = getSettings(db)
-        const statut = await getStatus(s.printer_ip, Number(s.printer_port))
-        if (!statut.pret) {
-          job.etat = 'erreur'
-          job.erreur_message = statut.message
-          logImpression.run(job.template_nom, job.quantite, 'erreur', statut.message)
-        } else {
-          try {
+        // try/catch large : une erreur DB (base verrouillée, disque plein…) ne
+        // doit faire échouer que ce job, pas planter tout le process (cf.
+        // process.on('unhandledRejection') dans index.ts)
+        try {
+          const s = getSettings(db)
+          const statut = await getStatus(s.printer_ip, Number(s.printer_port))
+          if (!statut.pret) {
+            job.etat = 'erreur'
+            job.erreur_message = statut.message
+            logImpression.run(job.template_nom, job.quantite, 'erreur', statut.message)
+          } else {
             const img = pngToGfa(Buffer.from(job.png.split(',')[1], 'base64'))
             const zpl = buildLabelZpl(img, {
               quantite: job.quantite,
@@ -52,10 +55,15 @@ export function createQueue(db: Database.Database) {
             await sendZpl(s.printer_ip, Number(s.printer_port), zpl)
             job.etat = 'ok'
             logImpression.run(job.template_nom, job.quantite, 'ok', null)
-          } catch (e) {
-            job.etat = 'erreur'
-            job.erreur_message = (e as Error).message
+          }
+        } catch (e) {
+          job.etat = 'erreur'
+          job.erreur_message = (e as Error).message
+          console.error('échec traitement job impression', job.id, e)
+          try {
             logImpression.run(job.template_nom, job.quantite, 'erreur', job.erreur_message)
+          } catch (e2) {
+            console.error("échec écriture print_log (base indisponible ?)", e2)
           }
         }
         job.png = '' // le PNG ne sert plus : libère la mémoire

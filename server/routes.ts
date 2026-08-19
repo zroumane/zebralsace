@@ -288,8 +288,15 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   const file = createQueue(db)
 
   api.get('/status', async (_req, res) => {
-    const s = getSettings(db)
-    res.json({ ...(await getStatus(s.printer_ip, Number(s.printer_port))), file: file.snapshot() })
+    // try/catch : handler async, Express 4 ne rattrape pas un rejet de promesse
+    // (une erreur ici planterait tout le process via unhandledRejection)
+    try {
+      const s = getSettings(db)
+      res.json({ ...(await getStatus(s.printer_ip, Number(s.printer_port))), file: file.snapshot() })
+    } catch (e) {
+      console.error('échec /api/status', e)
+      res.status(500).json({ erreur: 'statut indisponible' })
+    }
   })
 
   api.post('/print', (req, res) => {

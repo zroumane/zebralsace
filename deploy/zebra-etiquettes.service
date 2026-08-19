@@ -10,6 +10,8 @@ WorkingDirectory=/opt/zebra-etiquettes
 ExecStart=/usr/bin/npm run start
 Environment=PORT=3000
 Environment=DATA_DIR=/opt/zebra-etiquettes/data
+StandardOutput=append:/opt/zebra-etiquettes/logs/app.log
+StandardError=append:/opt/zebra-etiquettes/logs/app.log
 Restart=always
 RestartSec=3
 

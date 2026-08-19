@@ -9,6 +9,7 @@ command -v node >/dev/null || { echo "Node.js 22+ requis (https://nodejs.org)"; 
 echo "Installation des dépendances et build…"
 npm ci
 npm run build
+mkdir -p logs
 
 # Unité systemd adaptée au dossier courant, à l'utilisateur courant et au npm réel
 SERVICE=/etc/systemd/system/zebra-etiquettes.service
@@ -21,4 +22,4 @@ echo
 echo "Service installé et démarré. Vérification :"
 sleep 1
 curl -s localhost:3000/api/ping && echo " ← l'application répond sur le port 3000"
-echo "Journal : sudo journalctl -u zebra-etiquettes -f"
+echo "Journal : sudo journalctl -u zebra-etiquettes -f  (ou tail -f logs/app.log)"
