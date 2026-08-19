@@ -36,7 +36,23 @@ echo Arret de l'application...
 schtasks /end /tn Zebralsace >nul 2>&1
 timeout /t 2 /nobreak >nul
 
-call npm ci || (pause & exit /b 1)
+rem le process qui vient d'etre tue (ou un antivirus qui scanne le .node
+rem fraichement ecrit) peut garder le fichier verrouille un instant : on
+rem retente plutot que d'echouer sur un premier EPERM
+set TENTATIVES=0
+:npm_ci_retry
+call npm ci
+if errorlevel 1 (
+  set /a TENTATIVES+=1
+  if %TENTATIVES% lss 6 (
+    echo Fichier verrouille ^(antivirus ou arret en cours^), nouvel essai dans 3s...
+    timeout /t 3 /nobreak >nul
+    goto npm_ci_retry
+  )
+  echo npm ci a echoue apres plusieurs tentatives - fichier probablement verrouille en permanence ^(antivirus ?^).
+  pause
+  exit /b 1
+)
 call npm run build || (pause & exit /b 1)
 
 echo Redemarrage de l'application...
