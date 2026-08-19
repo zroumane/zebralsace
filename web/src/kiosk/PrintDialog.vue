@@ -121,6 +121,7 @@ async function imprimer() {
       template_nom: template.value.nom,
       quantite: quantiteFinale.value,
       png: apercu.value,
+      carton: modeCarton.value,
     })
     message.success(
       `${quantiteFinale.value} étiquette${quantiteFinale.value > 1 ? 's' : ''} ajoutée${quantiteFinale.value > 1 ? 's' : ''} à la file d'impression`

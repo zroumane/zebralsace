@@ -300,7 +300,7 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
   })
 
   api.post('/print', (req, res) => {
-    const { template_nom, quantite, png } = req.body ?? {}
+    const { template_nom, quantite, png, carton } = req.body ?? {}
     if (
       typeof template_nom !== 'string' ||
       !Number.isInteger(quantite) ||
@@ -310,7 +310,7 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
     ) {
       return res.status(400).json({ erreur: 'template_nom, quantite (≥ 1) et png (dataURL) requis' })
     }
-    res.status(202).json(file.enfiler(template_nom, quantite, String(png)))
+    res.status(202).json(file.enfiler(template_nom, quantite, String(png), carton === true))
   })
 
   api.get('/print-log', (req, res) => {
@@ -334,6 +334,24 @@ export function createApp(db: Database.Database, dataDir: string): express.Expre
         .prepare('SELECT DISTINCT template_nom FROM print_log ORDER BY template_nom COLLATE NOCASE')
         .all()
         .map((r: any) => r.template_nom)
+    )
+  })
+
+  // résumé simplifié d'une journée pour le kiosque : par modèle, le total
+  // imprimé avec succès ce jour-là, cartons et lots comptés séparément
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+  api.get('/print-log/jour', (req, res) => {
+    const date = String(req.query.date ?? '')
+    if (!DATE_RE.test(date)) return res.status(400).json({ erreur: 'date (AAAA-MM-JJ) requise' })
+    res.json(
+      db
+        .prepare(
+          `SELECT template_nom, carton, SUM(quantite) AS quantite FROM print_log
+           WHERE statut = 'ok' AND date(date_heure) = ?
+           GROUP BY template_nom, carton
+           ORDER BY template_nom COLLATE NOCASE`
+        )
+        .all(date)
     )
   })
 

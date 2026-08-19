@@ -6,6 +6,7 @@ import { api, type Template } from '../api'
 import { useStatus } from '../useStatus'
 import StatusBadge from './StatusBadge.vue'
 import PrintDialog from './PrintDialog.vue'
+import ResumeImpressions from './ResumeImpressions.vue'
 
 const statut = useStatus()
 const message = useMessage()
@@ -90,6 +91,7 @@ const sections = computed(() => {
       <p v-if="!templates.length" class="aucun">
         Aucun modèle d'étiquette. Créez-en un depuis l'administration.
       </p>
+      <ResumeImpressions />
     </div>
 
     <PrintDialog

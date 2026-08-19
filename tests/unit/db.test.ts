@@ -36,7 +36,7 @@ describe('db', () => {
 
   it('une base neuve est marquée au dernier schéma', () => {
     const db = tmpDb()
-    expect(db.pragma('user_version', { simple: true })).toBe(5)
+    expect(db.pragma('user_version', { simple: true })).toBe(6)
     const t = db.prepare("SELECT categorie, position, poids_g FROM templates LIMIT 0").columns()
     expect(t.map((c) => c.name)).toEqual(['categorie', 'position', 'poids_g'])
     expect(() => db.prepare('SELECT position FROM logos LIMIT 0').columns()).not.toThrow()
@@ -65,6 +65,16 @@ describe('db', () => {
       chemin_fichier TEXT NOT NULL
     )`)
     vieille.prepare("INSERT INTO logos (nom, chemin_fichier) VALUES ('Vieux logo', '1.png')").run()
+    // les vraies bases anciennes ont toutes une table print_log (sans carton)
+    vieille.exec(`CREATE TABLE print_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date_heure TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      template_nom TEXT NOT NULL,
+      quantite INTEGER NOT NULL,
+      statut TEXT NOT NULL CHECK (statut IN ('ok', 'erreur')),
+      erreur_message TEXT
+    )`)
+    vieille.prepare("INSERT INTO print_log (template_nom, quantite, statut) VALUES ('Ancien', 3, 'ok')").run()
     vieille.close()
 
     const db = initDb(dir)
@@ -75,7 +85,9 @@ describe('db', () => {
     expect(t.poids_g).toBe(280)
     const l = db.prepare("SELECT * FROM logos WHERE nom = 'Vieux logo'").get() as any
     expect(l.position).toBe(0)
-    expect(db.pragma('user_version', { simple: true })).toBe(5)
+    const p = db.prepare("SELECT * FROM print_log WHERE template_nom = 'Ancien'").get() as any
+    expect(p.carton).toBe(0)
+    expect(db.pragma('user_version', { simple: true })).toBe(6)
     expect(() => db.prepare('SELECT id, nom, position FROM categories LIMIT 0').columns()).not.toThrow()
   })
 

@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS print_log (
   template_nom TEXT NOT NULL,
   quantite INTEGER NOT NULL,
   statut TEXT NOT NULL CHECK (statut IN ('ok', 'erreur')),
-  erreur_message TEXT
+  erreur_message TEXT,
+  carton INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS settings (
   cle TEXT PRIMARY KEY,
@@ -79,6 +80,8 @@ const MIGRATIONS: string[] = [
   `ALTER TABLE templates ADD COLUMN quantite_carton INTEGER NOT NULL DEFAULT 15;`,
   // v5 : poids unitaire (g) — variable {{poids}}, comme quantite_carton
   `ALTER TABLE templates ADD COLUMN poids_g INTEGER NOT NULL DEFAULT 280;`,
+  // v6 : distingue étiquette carton / lot dans le journal — résumé du jour au kiosque
+  `ALTER TABLE print_log ADD COLUMN carton INTEGER NOT NULL DEFAULT 0;`,
 ]
 
 export function initDb(dataDir: string): Database.Database {

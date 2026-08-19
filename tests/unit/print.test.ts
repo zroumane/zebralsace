@@ -115,6 +115,24 @@ describe('/api/print (file d’attente)', () => {
     p.close()
   })
 
+  it('journalise le mode carton', async () => {
+    const p = await startFakePrinter()
+    await configure(p.port)
+    await request(app)
+      .post('/api/print')
+      .send({ template_nom: 'Jambon', quantite: 3, png: PNG_1PX, carton: true })
+      .expect(202)
+    await request(app)
+      .post('/api/print')
+      .send({ template_nom: 'Jambon', quantite: 20, png: PNG_1PX })
+      .expect(202)
+    await attendre(async () => (await journal()).length === 2)
+    const lignes = await journal()
+    expect(lignes.find((l: any) => l.quantite === 3)).toMatchObject({ carton: 1 })
+    expect(lignes.find((l: any) => l.quantite === 20)).toMatchObject({ carton: 0 })
+    p.close()
+  })
+
   it('ne garde que les 10 derniers jobs terminés dans la file', async () => {
     const p = await startFakePrinter()
     await configure(p.port)
@@ -129,5 +147,54 @@ describe('/api/print (file d’attente)', () => {
     expect(statut.file).toHaveLength(10)
     expect(statut.file[0].template_nom).toBe('J2')
     p.close()
+  })
+})
+
+describe('/api/print-log/jour (résumé kiosque)', () => {
+  it('regroupe par modèle, cartons et lots séparés, ignore les erreurs et les autres jours', async () => {
+    const p = await startFakePrinter()
+    await configure(p.port)
+    await request(app)
+      .post('/api/print')
+      .send({ template_nom: 'Jambon', quantite: 2, png: PNG_1PX, carton: true })
+      .expect(202)
+    await request(app)
+      .post('/api/print')
+      .send({ template_nom: 'Jambon', quantite: 15, png: PNG_1PX })
+      .expect(202)
+    await request(app)
+      .post('/api/print')
+      .send({ template_nom: 'Quiche', quantite: 4, png: PNG_1PX })
+      .expect(202)
+    await attendre(async () => (await journal()).length === 3)
+
+    const pBloque = await startFakePrinter({ papier: true })
+    await configure(pBloque.port)
+    await request(app)
+      .post('/api/print')
+      .send({ template_nom: 'Jambon', quantite: 99, png: PNG_1PX, carton: true })
+      .expect(202)
+    await attendre(async () => (await request(app).get('/api/print-log?statut=erreur')).body.length === 1)
+    pBloque.close()
+
+    const aujourdhui = new Date().toISOString().slice(0, 10)
+    const { body } = await request(app).get(`/api/print-log/jour?date=${aujourdhui}`).expect(200)
+    expect(body).toEqual(
+      expect.arrayContaining([
+        { template_nom: 'Jambon', carton: 1, quantite: 2 },
+        { template_nom: 'Jambon', carton: 0, quantite: 15 },
+        { template_nom: 'Quiche', carton: 0, quantite: 4 },
+      ])
+    )
+    expect(body).toHaveLength(3) // le job en erreur (99) n'apparaît pas
+
+    const { body: vide } = await request(app).get('/api/print-log/jour?date=2000-01-01').expect(200)
+    expect(vide).toEqual([])
+    p.close()
+  })
+
+  it('exige une date au format AAAA-MM-JJ', async () => {
+    await request(app).get('/api/print-log/jour').expect(400)
+    await request(app).get('/api/print-log/jour?date=nawak').expect(400)
   })
 })

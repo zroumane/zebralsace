@@ -55,4 +55,10 @@ export interface LigneJournal {
   quantite: number
   statut: 'ok' | 'erreur'
   erreur_message: string | null
+  carton: number
+}
+export interface LigneResumeJour {
+  template_nom: string
+  carton: number
+  quantite: number
 }

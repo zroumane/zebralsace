@@ -11,7 +11,7 @@ export interface JobFile {
   erreur_message: string | null
 }
 
-type JobInterne = JobFile & { png: string }
+type JobInterne = JobFile & { png: string; carton: boolean }
 
 const FINIS_CONSERVES = 10
 
@@ -23,7 +23,7 @@ export function createQueue(db: Database.Database) {
   let actif = false
 
   const logImpression = db.prepare(
-    'INSERT INTO print_log (template_nom, quantite, statut, erreur_message) VALUES (?, ?, ?, ?)'
+    'INSERT INTO print_log (template_nom, quantite, statut, erreur_message, carton) VALUES (?, ?, ?, ?, ?)'
   )
 
   async function traiter(): Promise<void> {
@@ -42,7 +42,7 @@ export function createQueue(db: Database.Database) {
           if (!statut.pret) {
             job.etat = 'erreur'
             job.erreur_message = statut.message
-            logImpression.run(job.template_nom, job.quantite, 'erreur', statut.message)
+            logImpression.run(job.template_nom, job.quantite, 'erreur', statut.message, job.carton ? 1 : 0)
           } else {
             const img = pngToGfa(Buffer.from(job.png.split(',')[1], 'base64'))
             const zpl = buildLabelZpl(img, {
@@ -54,14 +54,14 @@ export function createQueue(db: Database.Database) {
             })
             await sendZpl(s.printer_ip, Number(s.printer_port), zpl)
             job.etat = 'ok'
-            logImpression.run(job.template_nom, job.quantite, 'ok', null)
+            logImpression.run(job.template_nom, job.quantite, 'ok', null, job.carton ? 1 : 0)
           }
         } catch (e) {
           job.etat = 'erreur'
           job.erreur_message = (e as Error).message
           console.error('échec traitement job impression', job.id, e)
           try {
-            logImpression.run(job.template_nom, job.quantite, 'erreur', job.erreur_message)
+            logImpression.run(job.template_nom, job.quantite, 'erreur', job.erreur_message, job.carton ? 1 : 0)
           } catch (e2) {
             console.error("échec écriture print_log (base indisponible ?)", e2)
           }
@@ -82,7 +82,7 @@ export function createQueue(db: Database.Database) {
   }
 
   return {
-    enfiler(template_nom: string, quantite: number, png: string): JobFile {
+    enfiler(template_nom: string, quantite: number, png: string, carton: boolean): JobFile {
       const job: JobInterne = {
         id: ++seq,
         template_nom,
@@ -90,6 +90,7 @@ export function createQueue(db: Database.Database) {
         etat: 'en_attente',
         erreur_message: null,
         png,
+        carton,
       }
       jobs.push(job)
       void traiter()
