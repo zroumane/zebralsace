@@ -175,16 +175,29 @@ async function imprimer() {
           <div class="dates">
             <div class="date-choix" :class="{ inactif: !avecDate }">
               <n-checkbox v-model:checked="avecDate" data-testid="avec-date">Date de fabrication</n-checkbox>
-              <input v-model="fabrication" type="date" :disabled="!avecDate" data-testid="date-fabrication" />
+              <!-- n-date-picker plutôt qu'un <input type="date"> natif : son format
+                   d'affichage suit la locale du navigateur/OS (souvent en anglais sur
+                   les postes kiosque), pas la langue de la page — ici il est forcé en
+                   jj/mm/aaaa par la locale française réglée dans App.vue -->
+              <n-date-picker
+                v-model:value="fabrication"
+                type="date"
+                value-format="yyyy-MM-dd"
+                :disabled="!avecDate"
+                :clearable="false"
+                data-testid="date-fabrication"
+              />
             </div>
             <div class="date-choix" :class="{ inactif: !avecDlc }">
               <n-checkbox v-model:checked="avecDlc" data-testid="avec-dlc">Date de péremption</n-checkbox>
-              <input
-                v-model="peremption"
+              <n-date-picker
+                v-model:value="peremption"
                 type="date"
+                value-format="yyyy-MM-dd"
                 :disabled="!avecDlc"
+                :clearable="false"
                 data-testid="date-peremption"
-                @input="peremptionTouchee = true"
+                @update:value="peremptionTouchee = true"
               />
             </div>
           </div>
@@ -277,8 +290,9 @@ async function imprimer() {
 .date-choix { display: flex; flex-direction: column; gap: 6px; }
 .date-choix :deep(.n-checkbox) { --n-size: 22px !important; --n-font-size: 15px !important; align-items: center; }
 .date-choix :deep(.n-checkbox__label) { font-weight: 700; }
-.date-choix input { font-size: 15px; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; width: 100%; box-sizing: border-box; }
-.inactif input { opacity: 0.45; }
+.date-choix :deep(.n-date-picker) { width: 100%; }
+.date-choix :deep(.n-input) { --n-font-size: 15px !important; }
+.inactif :deep(.n-date-picker) { opacity: 0.45; }
 /* − et + de part et d'autre du champ, puis une ligne ±5 et une ligne ±10 */
 .quantite { display: flex; flex-direction: column; gap: 8px; }
 .quantite :deep(.n-button) { --n-height: 52px !important; height: 52px; font-size: 16px; }

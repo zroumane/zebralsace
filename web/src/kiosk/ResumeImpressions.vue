@@ -59,7 +59,17 @@ const parModele = computed(() => {
         <button type="button" class="nav-bouton" data-testid="resume-jour-precedent" @click="changerJour(-1)">
           ◀
         </button>
-        <input v-model="date" type="date" :max="aujourdhui()" data-testid="resume-date" />
+        <!-- n-date-picker plutôt qu'un <input type="date"> natif : son format suit
+             la locale du navigateur/OS (souvent anglais sur un poste kiosque), pas
+             la langue de la page — forcé en jj/mm/aaaa par la locale française de App.vue -->
+        <n-date-picker
+          v-model:value="date"
+          type="date"
+          value-format="yyyy-MM-dd"
+          :is-date-disabled="(ts: number) => ts > Date.now()"
+          :clearable="false"
+          data-testid="resume-date"
+        />
         <button
           type="button"
           class="nav-bouton"
@@ -99,7 +109,7 @@ const parModele = computed(() => {
 }
 .nav-bouton:disabled { opacity: 0.4; cursor: default; }
 .nav-bouton:active:not(:disabled) { border-color: #c1121f; color: #c1121f; }
-.resume-nav input[type='date'] { font: inherit; font-size: 15px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; }
+.resume-nav :deep(.n-date-picker) { width: 160px; }
 .resume-vide { color: #999; padding: 16px 0; }
 .resume-liste { display: flex; flex-direction: column; gap: 8px; padding: 12px 0 24px; }
 .resume-ligne {

@@ -18,16 +18,19 @@ test('impression de bout en bout depuis le kiosque', async ({ page, request }) =
   await expect(page.getByTestId('statut-imprimante')).toContainText('Imprimante connectée')
   await page.getByTestId(`template-${id}`).click()
 
-  // aperçu rendu, dates pré-remplies
+  // aperçu rendu, dates pré-remplies (jj/mm/aaaa — locale française forcée par
+  // n-date-picker, indépendamment de la langue du navigateur/OS)
   await expect(page.getByTestId('apercu')).toHaveAttribute('src', /^data:image\/png/)
-  const fab = await page.getByTestId('date-fabrication').inputValue()
+  const champFabrication = page.getByTestId('date-fabrication').locator('input')
+  const fab = await champFabrication.inputValue()
   const auj = new Date()
   expect(fab).toBe(
-    `${auj.getFullYear()}-${String(auj.getMonth() + 1).padStart(2, '0')}-${String(auj.getDate()).padStart(2, '0')}`
+    `${String(auj.getDate()).padStart(2, '0')}/${String(auj.getMonth() + 1).padStart(2, '0')}/${auj.getFullYear()}`
   )
 
   const avant = await page.getByTestId('apercu').getAttribute('src')
-  await page.getByTestId('date-fabrication').fill('2026-03-01')
+  await champFabrication.fill('01/03/2026')
+  await champFabrication.press('Enter')
   await expect.poll(async () => page.getByTestId('apercu').getAttribute('src')).not.toBe(avant)
 
   // la quantité par défaut du lot reprend la quantité par carton du modèle (15, valeur
