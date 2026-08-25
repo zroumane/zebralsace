@@ -33,6 +33,9 @@ rem La tache planifiee garde npm run start (et esbuild.exe) ouvert en permanence
 rem sous Windows (contrairement a Linux) npm ci ne peut pas remplacer un fichier
 rem verrouille par un process en cours - on arrete donc l'appli avant de mettre a jour.
 echo Arret de l'application...
+rem /disable d'abord : sans ca le chien de garde (repetition 5 min) relance
+rem l'appli en plein npm ci et reverrouille les fichiers.
+schtasks /change /tn Zebralsace /disable >nul 2>&1
 schtasks /end /tn Zebralsace >nul 2>&1
 timeout /t 2 /nobreak >nul
 
@@ -50,12 +53,18 @@ if errorlevel 1 (
     goto npm_ci_retry
   )
   echo npm ci a echoue apres plusieurs tentatives - fichier probablement verrouille en permanence ^(antivirus ?^).
-  pause
-  exit /b 1
+  goto :remise_en_service
 )
-call npm run build || (pause & exit /b 1)
+call npm run build || goto :remise_en_service
 
+:remise_en_service
+rem toujours execute, succes comme echec : une mise a jour ratee ne doit pas
+rem laisser la tache desactivee, sinon l'appli ne redemarre plus du tout.
 echo Redemarrage de l'application...
+rem reapplique aussi les reglages de la tache : une machine installee avant ce
+rem correctif garde sinon la limite de 72 h qui eteint l'appli en silence.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%CD%\deploy\tache-planifiee.ps1"
+schtasks /change /tn Zebralsace /enable >nul 2>&1
 schtasks /run /tn Zebralsace >nul 2>&1
 
 echo Mise a jour terminee.

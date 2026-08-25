@@ -14,6 +14,9 @@ call npm run build || (pause & exit /b 1)
 rem Tache planifiee : demarre avec la machine (compte SYSTEM, sans session
 rem ouverte). Le script de demarrage relance l'application si elle s'arrete.
 schtasks /create /f /tn "Zebralsace" /tr "\"%CD%\deploy\zebra-etiquettes.cmd\"" /sc onstart /ru SYSTEM /rl HIGHEST || (pause & exit /b 1)
+rem Reglages par defaut de schtasks : Windows arrete la tache au bout de 72 h ou
+rem sur bascule batterie, et rien ne la relance avant le prochain boot.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%CD%\deploy\tache-planifiee.ps1" || (pause & exit /b 1)
 schtasks /run /tn "Zebralsace" >nul
 
 timeout /t 5 /nobreak >nul

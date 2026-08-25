@@ -105,8 +105,12 @@ Trois canaux d'installation, selon l'équipement du site :
 - **Windows (depuis les sources)** : `deploy\installer.cmd` (en
   administrateur) — installe les dépendances, build, et enregistre une tâche
   planifiée « Zebralsace » qui démarre avec la machine et relance
-  l'application si elle s'arrête. Alternative « vrai service » :
-  [NSSM](https://nssm.cc).
+  l'application si elle s'arrête. `deploy\tache-planifiee.ps1` (appelé par
+  l'installeur et par la mise à jour) lève les réglages par défaut de
+  `schtasks` qui éteignent l'application en silence — limite de 72 h,
+  arrêt sur bascule batterie — et ajoute un chien de garde qui la relance
+  dans les 5 minutes si la tâche a été arrêtée. Alternative « vrai
+  service » : [NSSM](https://nssm.cc).
 - **Docker** (serveur ou NAS déjà en place) : `docker compose up -d` avec le
   `compose.yml` fourni — image `ghcr.io/zroumane/zebralsace` publiée par la
   CI à chaque version taguée (authentification GHCR : token `packages:read`).
