@@ -163,3 +163,8 @@ Windows, utilisez WSL.
 - `deploy/` — installation, mise à jour et sauvegarde : scripts `.sh`
   (Linux, service systemd) et `.cmd` (Windows, tâche planifiée), à
   fonctionnalités identiques
+
+## Licence
+
+Propriétaire, tous droits réservés : aucune utilisation autorisée sans accord
+écrit de l'auteur. Voir `LICENSE`.
